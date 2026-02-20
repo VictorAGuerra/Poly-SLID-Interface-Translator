@@ -1,22 +1,24 @@
+# backend/main.py
+import asyncio
 import collections
 import queue
 import sys
+import threading
 import time
-import asyncio
 
 import numpy as np
 import sounddevice as sd
 import webrtcvad
 import whisper
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 # ===== Config =====
 MODEL_NAME = "base"
 SAMPLE_RATE = 16000
-DEVICE = None  # coloque o índice do microfone se precisar
+DEVICE = None  # set device index if needed (sd.query_devices())
 
+# VAD settings
 VAD_MODE = 2
 FRAME_MS = 30
 PRE_ROLL_MS = 200
@@ -28,18 +30,34 @@ MAX_UTTERANCE_SEC = 12
 model = whisper.load_model(MODEL_NAME)
 vad = webrtcvad.Vad(VAD_MODE)
 
-
 audio_q: "queue.Queue[np.ndarray]" = queue.Queue()
+events_q: "queue.Queue[dict]" = queue.Queue()
+
 
 def audio_callback(indata, frames, time_info, status):
     if status:
         print(status, file=sys.stderr)
     audio_q.put(indata.copy())
 
+
 def float32_to_int16_pcm(x: np.ndarray) -> bytes:
     x = np.clip(x, -1.0, 1.0)
     ints = (x * 32767.0).astype(np.int16)
     return ints.tobytes()
+
+
+def detect_lang_with_confidence(audio_np: np.ndarray) -> tuple[str, float]:
+    """
+    Uses Whisper's language detector to get (lang, confidence) where confidence is [0..1].
+    """
+    audio = whisper.pad_or_trim(audio_np)
+    mel = whisper.log_mel_spectrogram(audio).to(model.device)
+    _, probs = model.detect_language(mel)
+
+    lang = max(probs, key=probs.get)
+    conf = float(probs[lang])
+    return lang, conf
+
 
 def mic_worker(out_queue: "queue.Queue[dict]"):
     frame_len = int(SAMPLE_RATE * FRAME_MS / 1000)
@@ -49,10 +67,11 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
     max_frames = int(MAX_UTTERANCE_SEC * 1000 / FRAME_MS)
 
     ring_buffer = collections.deque(maxlen=pre_roll_frames)
-    voiced_frames = []
+    voiced_frames: list[np.ndarray] = []
     in_speech = False
     speech_run = 0
     silence_run = 0
+
     buffer = np.zeros((0,), dtype=np.float32)
 
     with sd.InputStream(
@@ -95,6 +114,10 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
                     in_speech = False
                     silence_run = 0
 
+                    # ✅ language + confidence
+                    lang, conf = detect_lang_with_confidence(utterance)
+
+                    # transcription
                     t0 = time.time()
                     result = model.transcribe(
                         utterance,
@@ -105,15 +128,18 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
                     )
                     dt = time.time() - t0
 
-                    lang = result.get("language", "?")
                     text = (result.get("text") or "").strip()
 
-                    out_queue.put({
-                        "type": "asr",
-                        "language": lang,
-                        "text": text,
-                        "latency_sec": round(dt, 3),
-                    })
+                    out_queue.put(
+                        {
+                            "type": "asr",
+                            "language": lang,
+                            "confidence": round(conf, 4),  # 0..1
+                            "text": text,
+                            "latency_sec": round(dt, 3),
+                        }
+                    )
+
 
 # ===== FastAPI =====
 app = FastAPI()
@@ -126,24 +152,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-events_q: "queue.Queue[dict]" = queue.Queue()
+_mic_thread_started = False
+
 
 @app.on_event("startup")
 def start_mic_thread():
-    import threading
+    global _mic_thread_started
+    if _mic_thread_started:
+        return
+    _mic_thread_started = True
+
     t = threading.Thread(target=mic_worker, args=(events_q,), daemon=True)
     t.start()
+
 
 @app.get("/health")
 def health():
     return {"ok": True}
+
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     try:
         while True:
-            # pega evento do thread sem travar o loop do FastAPI
             event = await asyncio.to_thread(events_q.get)
             await ws.send_json(event)
     except WebSocketDisconnect:
