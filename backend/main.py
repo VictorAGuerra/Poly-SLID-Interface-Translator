@@ -5,6 +5,7 @@ import queue
 import sys
 import threading
 import time
+from typing import Dict, Tuple
 
 import numpy as np
 import sounddevice as sd
@@ -13,27 +14,42 @@ import whisper
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+# Argos Translate (offline)
+from argostranslate import package as argos_package
+from argostranslate import translate as argos_translate
+
 # ===== Config =====
 MODEL_NAME = "base"
 SAMPLE_RATE = 16000
-DEVICE = None  # set device index if needed (sd.query_devices())
+DEVICE = None  # set device index if needed
 
-# VAD settings
-VAD_MODE = 2
-FRAME_MS = 30
+VAD_MODE = 2              # 0=less aggressive, 3=more aggressive
+FRAME_MS = 30             # must be 10/20/30 for webrtcvad
 PRE_ROLL_MS = 200
 START_TRIGGER_MS = 150
 END_TRIGGER_MS = 600
 MAX_UTTERANCE_SEC = 12
 
-# ===== Whisper + VAD =====
+# ===== Models =====
 model = whisper.load_model(MODEL_NAME)
 vad = webrtcvad.Vad(VAD_MODE)
 
 audio_q: "queue.Queue[np.ndarray]" = queue.Queue()
 events_q: "queue.Queue[dict]" = queue.Queue()
 
+# ===== FastAPI =====
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+_mic_thread_started = False
+
+# ===== Audio helpers =====
 def audio_callback(indata, frames, time_info, status):
     if status:
         print(status, file=sys.stderr)
@@ -46,19 +62,87 @@ def float32_to_int16_pcm(x: np.ndarray) -> bytes:
     return ints.tobytes()
 
 
-def detect_lang_with_confidence(audio_np: np.ndarray) -> tuple[str, float]:
-    """
-    Uses Whisper's language detector to get (lang, confidence) where confidence is [0..1].
-    """
+def normalize_lang_code(lang: str | None) -> str:
+    if not lang:
+        return "en"
+    return lang
+
+
+def detect_lang_with_confidence(audio_np: np.ndarray) -> Tuple[str, float]:
     audio = whisper.pad_or_trim(audio_np)
     mel = whisper.log_mel_spectrogram(audio).to(model.device)
     _, probs = model.detect_language(mel)
-
     lang = max(probs, key=probs.get)
     conf = float(probs[lang])
-    return lang, conf
+    return normalize_lang_code(lang), conf
 
 
+# ===== Argos helpers =====
+_argos_ready_pairs: set[tuple[str, str]] = set()
+_argos_lock = threading.Lock()
+
+
+def _has_translation_pair(from_lang, tgt_code: str) -> bool:
+    """
+    Compatível com variações da API do Argos.
+    """
+    if hasattr(from_lang, "translations_to"):
+        # translations_to: list of Translation objects with .to_code
+        return any(getattr(t, "to_code", None) == tgt_code for t in from_lang.translations_to)
+
+    if hasattr(from_lang, "translations"):
+        # older: translations: list of Translation objects
+        return any(
+            getattr(t, "to_code", None) == tgt_code or getattr(t, "code", None) == tgt_code
+            for t in from_lang.translations
+        )
+
+    return False
+
+
+def ensure_argos_pair(src: str, tgt: str) -> None:
+    src = normalize_lang_code(src)
+    tgt = normalize_lang_code(tgt)
+
+    if src == tgt:
+        return
+    if (src, tgt) in _argos_ready_pairs:
+        return
+
+    with _argos_lock:
+        if (src, tgt) in _argos_ready_pairs:
+            return
+
+        installed = argos_translate.get_installed_languages()
+        from_lang = next((l for l in installed if l.code == src), None)
+
+        if from_lang and _has_translation_pair(from_lang, tgt):
+            _argos_ready_pairs.add((src, tgt))
+            return
+
+        argos_package.update_package_index()
+        available = argos_package.get_available_packages()
+
+        pkg = next((p for p in available if p.from_code == src and p.to_code == tgt), None)
+        if pkg is None:
+            raise RuntimeError(f"Argos: no package for {src}->{tgt}")
+
+        pkg_path = pkg.download()
+        argos_package.install_from_path(pkg_path)
+
+        _argos_ready_pairs.add((src, tgt))
+
+
+def argos_translate_text(text: str, src: str, tgt: str) -> str:
+    src = normalize_lang_code(src)
+    tgt = normalize_lang_code(tgt)
+    if not text or src == tgt:
+        return text
+    ensure_argos_pair(src, tgt)
+    return argos_translate.translate(text, src, tgt)
+
+
+# ===== Mic worker (MUST be defined before startup handler) =====
 def mic_worker(out_queue: "queue.Queue[dict]"):
     frame_len = int(SAMPLE_RATE * FRAME_MS / 1000)
     start_trigger_frames = max(1, int(START_TRIGGER_MS / FRAME_MS))
@@ -71,7 +155,6 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
     in_speech = False
     speech_run = 0
     silence_run = 0
-
     buffer = np.zeros((0,), dtype=np.float32)
 
     with sd.InputStream(
@@ -114,10 +197,8 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
                     in_speech = False
                     silence_run = 0
 
-                    # ✅ language + confidence
                     lang, conf = detect_lang_with_confidence(utterance)
 
-                    # transcription
                     t0 = time.time()
                     result = model.transcribe(
                         utterance,
@@ -134,34 +215,20 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
                         {
                             "type": "asr",
                             "language": lang,
-                            "confidence": round(conf, 4),  # 0..1
+                            "confidence": round(conf, 4),
                             "text": text,
                             "latency_sec": round(dt, 3),
                         }
                     )
 
 
-# ===== FastAPI =====
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-_mic_thread_started = False
-
-
+# ===== FastAPI lifecycle / endpoints =====
 @app.on_event("startup")
 def start_mic_thread():
     global _mic_thread_started
     if _mic_thread_started:
         return
     _mic_thread_started = True
-
     t = threading.Thread(target=mic_worker, args=(events_q,), daemon=True)
     t.start()
 
@@ -180,3 +247,33 @@ async def ws_endpoint(ws: WebSocket):
             await ws.send_json(event)
     except WebSocketDisconnect:
         pass
+
+
+@app.post("/i18n/auto-translate")
+async def i18n_auto_translate(payload: Dict):
+    """
+    Request:
+    {
+      "source_lang": "en",
+      "target_lang": "pt",
+      "namespace": "translation",
+      "texts": { "key": "English text", ... }
+    }
+    """
+    src = normalize_lang_code(payload.get("source_lang"))
+    tgt = normalize_lang_code(payload.get("target_lang"))
+    texts: Dict = payload.get("texts") or {}
+
+    out: Dict[str, str] = {}
+    memo: Dict[str, str] = {}
+
+    for k, v in texts.items():
+        s = str(v)
+        if s in memo:
+            out[str(k)] = memo[s]
+            continue
+        translated = argos_translate_text(s, src, tgt)
+        memo[s] = translated
+        out[str(k)] = translated
+
+    return {"target_lang": tgt, "texts": out}
