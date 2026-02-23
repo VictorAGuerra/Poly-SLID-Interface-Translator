@@ -11,7 +11,7 @@ import numpy as np
 import sounddevice as sd
 import webrtcvad
 import whisper
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 # Argos Translate (offline)
@@ -65,7 +65,7 @@ def float32_to_int16_pcm(x: np.ndarray) -> bytes:
 def normalize_lang_code(lang: str | None) -> str:
     if not lang:
         return "en"
-    return lang
+    return str(lang).lower().strip()
 
 
 def detect_lang_with_confidence(audio_np: np.ndarray) -> Tuple[str, float]:
@@ -87,11 +87,9 @@ def _has_translation_pair(from_lang, tgt_code: str) -> bool:
     Compatível com variações da API do Argos.
     """
     if hasattr(from_lang, "translations_to"):
-        # translations_to: list of Translation objects with .to_code
         return any(getattr(t, "to_code", None) == tgt_code for t in from_lang.translations_to)
 
     if hasattr(from_lang, "translations"):
-        # older: translations: list of Translation objects
         return any(
             getattr(t, "to_code", None) == tgt_code or getattr(t, "code", None) == tgt_code
             for t in from_lang.translations
@@ -142,7 +140,7 @@ def argos_translate_text(text: str, src: str, tgt: str) -> str:
     return argos_translate.translate(text, src, tgt)
 
 
-# ===== Mic worker (MUST be defined before startup handler) =====
+# ===== Mic worker =====
 def mic_worker(out_queue: "queue.Queue[dict]"):
     frame_len = int(SAMPLE_RATE * FRAME_MS / 1000)
     start_trigger_frames = max(1, int(START_TRIGGER_MS / FRAME_MS))
@@ -250,7 +248,7 @@ async def ws_endpoint(ws: WebSocket):
 
 
 @app.post("/i18n/auto-translate")
-async def i18n_auto_translate(payload: Dict):
+async def i18n_auto_translate(payload: Dict = Body(...)):
     """
     Request:
     {
@@ -258,6 +256,35 @@ async def i18n_auto_translate(payload: Dict):
       "target_lang": "pt",
       "namespace": "translation",
       "texts": { "key": "English text", ... }
+    }
+    """
+    src = normalize_lang_code(payload.get("source_lang"))
+    tgt = normalize_lang_code(payload.get("target_lang"))
+    texts: Dict = payload.get("texts") or {}
+
+    out: Dict[str, str] = {}
+    memo: Dict[str, str] = {}
+
+    for k, v in texts.items():
+        s = str(v)
+        if s in memo:
+            out[str(k)] = memo[s]
+            continue
+        translated = argos_translate_text(s, src, tgt)
+        memo[s] = translated
+        out[str(k)] = translated
+
+    return {"target_lang": tgt, "texts": out}
+
+
+@app.post("/i18n/auto-translate-mini")
+async def i18n_auto_translate_mini(payload: Dict = Body(...)):
+    """
+    Request:
+    {
+      "source_lang": "en",
+      "target_lang": "pt",
+      "texts": { "popup.title": "...", ... }
     }
     """
     src = normalize_lang_code(payload.get("source_lang"))

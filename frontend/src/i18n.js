@@ -46,6 +46,14 @@ const resources = {
       "hint.speak": "Tip: speak near the mic — the assistant updates language & transcript live.",
       "footer.left": "Poly Hotel © 2026",
       "footer.right": "Local demo — FastAPI + WebSocket + React",
+
+      "popup.title": "Confirm language change",
+      "popup.detected": "Detected:",
+      "popup.question": "Do you want to switch the interface language?",
+      "popup.confirm": "Switch",
+      "popup.keep": "Keep current",
+      "popup.loading": "Loading language…",
+      "popup.close": "Close",
     },
   },
 };

@@ -2,11 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
 
-import polyLogo from "./assets/poly-logo.png";
+import polyLogo from "./assets/poly-logo.png"; // <= adicione o arquivo aqui
 
 function normalizeLang(lang) {
   if (!lang) return "en";
-  return String(lang).toLowerCase();
+  const l = String(lang).toLowerCase();
+  if (l.startsWith("pt")) return "pt";
+  if (l.startsWith("en")) return "en";
+  if (l.startsWith("ja")) return "ja";
+  if (l.startsWith("fr")) return "fr";
+  if (l.startsWith("es")) return "es";
+  if (l.startsWith("de")) return "de";
+  if (l.startsWith("it")) return "it";
+  return "en";
 }
 
 function clamp01(x) {
@@ -281,12 +289,12 @@ export default function App() {
         <div className="brand">
           <div className="brandMark" aria-hidden="true">
             <img
-                src={polyLogo}
-                alt=""
-                className="brandLogoImg"
-                draggable="false"
-              />
-            </div>
+              src={polyLogo}
+              alt=""
+              className="brandLogoImg"
+              draggable="false"
+            />
+          </div>
           <div className="brandText">
             <div className="brandName">{t("brand.name")}</div>
             <div className="brandTag">{t("brand.tag")}</div>
@@ -331,6 +339,11 @@ export default function App() {
             <div>
               <h1 className="title">{t("checkin.title")}</h1>
               <p className="subtitle">{t("checkin.subtitle")}</p>
+            </div>
+
+            <div className="pill">
+              <div className="pillLabel">{t("assistant.label")}</div>
+              <div className="pillValue">{lang}</div>
             </div>
           </div>
 
@@ -424,6 +437,8 @@ export default function App() {
             >
               {t("actions.clear")}
             </button>
+
+            <div className="hint">{t("hint.speak")}</div>
           </div>
         </section>
 
