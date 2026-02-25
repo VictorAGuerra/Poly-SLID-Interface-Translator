@@ -477,7 +477,6 @@ export default function App() {
         <span className="muted">
           {t("footer.left", { year: new Date().getFullYear() })}
         </span>
-        <span className="muted">{t("footer.right")}</span>
       </footer>
     </div>
   );
