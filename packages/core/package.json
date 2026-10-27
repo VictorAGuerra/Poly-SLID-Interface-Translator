@@ -1,0 +1,38 @@
+{
+  "name": "@poly-i18n/core",
+  "version": "0.1.0",
+  "description": "Interfaces traduzíveis por voz: detecção do idioma falado e tradução automática dos textos da interface.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "i18next": ">=23"
+  },
+  "peerDependenciesMeta": {
+    "i18next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "i18next": "^26.5.11",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

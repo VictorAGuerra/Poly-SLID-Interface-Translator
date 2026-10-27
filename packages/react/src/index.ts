@@ -1,0 +1,7 @@
+export { PolyProvider, usePoly } from "./context.js";
+export type { PolyProviderProps, UsePolyResult } from "./context.js";
+export { LanguagePrompt } from "./LanguagePrompt.js";
+export type { LanguagePromptProps, LanguagePromptRenderProps } from "./LanguagePrompt.js";
+
+// Reexporta o núcleo para quem usa React precisar de um pacote só.
+export * from "@poly-i18n/core";

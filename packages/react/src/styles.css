@@ -1,0 +1,150 @@
+/* Estilo padrão do <LanguagePrompt>. Ajuste pelas variáveis --poly-*. */
+.poly-prompt {
+  --poly-bg: rgba(255, 255, 255, 0.94);
+  --poly-fg: #101828;
+  --poly-muted: #667085;
+  --poly-border: #e6e8ef;
+  --poly-primary: #101828;
+  --poly-primary-fg: #ffffff;
+  --poly-radius: 18px;
+
+  position: fixed;
+  top: 18px;
+  inset-inline-end: 18px;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  color: var(--poly-fg);
+  font: inherit;
+}
+
+.poly-prompt--open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.poly-prompt__card {
+  width: min(380px, calc(100vw - 36px));
+  background: var(--poly-bg);
+  border: 1px solid var(--poly-border);
+  border-radius: var(--poly-radius);
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.18);
+  overflow: hidden;
+}
+
+.poly-prompt--open .poly-prompt__card {
+  pointer-events: auto;
+}
+
+.poly-prompt__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--poly-border);
+}
+
+.poly-prompt__title {
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.poly-prompt__close {
+  border: 1px solid var(--poly-border);
+  background: #fff;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.poly-prompt__body {
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.poly-prompt__line {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.poly-prompt__muted {
+  color: var(--poly-muted);
+}
+
+.poly-prompt__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--poly-border);
+  background: #f9fafb;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.poly-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Botões grandes: telas de toque em quiosques. */
+.poly-prompt__button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--poly-border);
+  background: #fff;
+  color: var(--poly-fg);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.poly-prompt__button--primary {
+  background: var(--poly-primary);
+  border-color: var(--poly-primary);
+  color: var(--poly-primary-fg);
+}
+
+.poly-prompt__button:disabled,
+.poly-prompt__close:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.poly-prompt__inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poly-prompt__spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: poly-spin 0.8s linear infinite;
+}
+
+@keyframes poly-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poly-prompt {
+    transition: none;
+  }
+  .poly-prompt__spinner {
+    animation-duration: 2s;
+  }
+}
