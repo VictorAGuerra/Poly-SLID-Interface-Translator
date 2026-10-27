@@ -1,5 +1,110 @@
 # poly-i18n
 
+**English** · [Português](#português)
+
+Interfaces that translate themselves based on the language people speak.
+
+Built for **self-service kiosks in places with many immigrants and tourists**:
+hotels, airports, hospitals, public services. Someone speaks near the kiosk,
+their language is recognized, and the interface offers to switch — already
+asking the question in their language.
+
+- **Write your UI in one language.** Other languages are generated
+  automatically (offline translation with Argos) and cached.
+- **Detection from speech** (Whisper), with a minimum confidence, noise
+  filtering, and no nagging about a language the person already declined.
+- **Protected terms:** proper names, brands and variables are never translated.
+- **Reviewed translations win** over machine translation, for texts where a
+  mistake is costly (healthcare, immigration, contracts).
+- **Made for kiosks:** returns to the base language when nobody is using it,
+  sets `lang`/`dir` (Arabic, Persian, Urdu...), large touch-friendly buttons.
+- **Offline and private:** speech recognition and translation run locally;
+  audio never leaves the device.
+
+> Status: in development (0.x). The API may still change.
+
+## Packages
+
+| Package | Description |
+| --- | --- |
+| [`@poly-i18n/core`](packages/core) | Framework-agnostic core: detection, state, translation with protected terms, cache, i18next adapter. |
+| [`@poly-i18n/react`](packages/react) | `<PolyProvider>`, `usePoly()` and `<LanguagePrompt>`. |
+| [`backend`](backend) | FastAPI server with Whisper (speech → language) and Argos (translation). Will become the `poly-server` package. |
+| [`examples/hotel-kiosk`](examples/hotel-kiosk) | Full example: hotel check-in. |
+
+## Usage with React + i18next
+
+```jsx
+import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@poly-i18n/react";
+import "@poly-i18n/react/styles.css";
+import i18n from "./i18n"; // i18next initialized with your English texts
+
+<PolyProvider
+  adapter={createI18nextAdapter(i18n)}
+  server="http://localhost:8000"
+  noTranslate={["Poly Hotel"]}
+  overrides={{ pt: { "brand.tag": "Autoatendimento" } }}
+  idleTimeout={120_000}
+>
+  <App />            {/* keep using useTranslation() / t("key") */}
+  <LanguagePrompt />
+</PolyProvider>
+```
+
+### Protecting text
+
+```js
+{
+  "checkin.title": "Welcome to Poly Hotel",            // protected via noTranslate
+  "form.namePlaceholder": "e.g., <nt>John Doe</nt>",   // protected via <nt> markup
+  "footer": "© {{year}}"                               // variables are always protected
+}
+```
+
+The `<nt>` markup is stripped when displayed. If the translator damages a
+protected term, the library detects it and translates only the segments
+between protected terms, so they are never lost.
+
+### Main options
+
+| Option | Default | |
+| --- | --- | --- |
+| `baseLanguage` | `"en"` | Language the UI is written in. |
+| `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
+| `supportedLanguages` | all | Restricts which languages are offered. |
+| `autoSwitch` | `false` | Switch without asking. |
+| `promptTimeout` | `9000` | Auto-closes the prompt (ms). |
+| `declineCooldown` | `60000` | Don't suggest a declined language again (ms). |
+| `idleTimeout` | off | Return to the base language after inactivity (ms). |
+| `noTranslate` / `noTranslateKeys` | — | Terms / keys that are never translated. |
+| `overrides` | — | Reviewed translations: `{ language: { key: text } }`. |
+
+## Development
+
+Requires Node 22 (`nvm use`), pnpm and Python 3.10+.
+
+```bash
+pnpm install
+pnpm test          # package tests
+pnpm build         # build packages
+
+# backend
+cd backend && python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --port 8000
+
+# example (in another terminal, from the repo root)
+pnpm dev           # http://localhost:5173
+```
+
+## License
+
+MIT
+
+---
+
+## Português
+
 Interfaces que se traduzem sozinhas a partir do idioma falado.
 
 Pensado para **autoatendimento em lugares com muitos imigrantes e turistas**:
@@ -22,7 +127,7 @@ dela.
 
 > Status: em desenvolvimento (0.x). A API ainda pode mudar.
 
-## Pacotes
+### Pacotes
 
 | Pacote | Descrição |
 | --- | --- |
@@ -31,7 +136,7 @@ dela.
 | [`backend`](backend) | Servidor FastAPI com Whisper (fala → idioma) e Argos (tradução). Vai virar o pacote `poly-server`. |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Exemplo completo: check-in de hotel. |
 
-## Uso com React + i18next
+### Uso com React + i18next
 
 ```jsx
 import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@poly-i18n/react";
@@ -50,13 +155,13 @@ import i18n from "./i18n"; // i18next já inicializado com os textos em inglês
 </PolyProvider>
 ```
 
-### Protegendo textos
+#### Protegendo textos
 
 ```js
 {
-  "checkin.title": "Welcome to Poly Hotel",                 // protegido por noTranslate
-  "form.namePlaceholder": "e.g., <nt>John Doe</nt>",        // protegido pela marcação <nt>
-  "footer": "© {{year}}"                                    // variáveis são sempre protegidas
+  "checkin.title": "Welcome to Poly Hotel",            // protegido por noTranslate
+  "form.namePlaceholder": "e.g., <nt>John Doe</nt>",   // protegido pela marcação <nt>
+  "footer": "© {{year}}"                               // variáveis são sempre protegidas
 }
 ```
 
@@ -64,7 +169,7 @@ A marcação `<nt>` é removida na exibição. Quando o tradutor danifica um ter
 protegido, a biblioteca detecta e traduz só os trechos entre os termos, para
 que eles nunca se percam.
 
-### Opções principais
+#### Opções principais
 
 | Opção | Padrão | |
 | --- | --- | --- |
@@ -78,7 +183,7 @@ que eles nunca se percam.
 | `noTranslate` / `noTranslateKeys` | — | Termos / chaves que nunca são traduzidos. |
 | `overrides` | — | Traduções revisadas: `{ idioma: { chave: texto } }`. |
 
-## Desenvolvimento
+### Desenvolvimento
 
 Requer Node 22 (`nvm use`), pnpm e Python 3.10+.
 
@@ -96,6 +201,6 @@ uvicorn main:app --port 8000
 pnpm dev           # http://localhost:5173
 ```
 
-## Licença
+### Licença
 
 MIT
