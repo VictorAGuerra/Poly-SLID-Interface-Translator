@@ -1,5 +1,5 @@
 {
-  "name": "poly-interface-monorepo",
+  "name": "poly-monorepo",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.0.0",

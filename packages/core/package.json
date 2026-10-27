@@ -1,7 +1,20 @@
 {
-  "name": "@poly-interface/core",
+  "name": "@swalay/poly-core",
   "version": "0.1.0",
-  "description": "Interfaces traduzíveis por voz: detecção do idioma falado e tradução automática dos textos da interface.",
+  "description": "Voice-driven interface translation: detects the spoken language and translates your UI texts on the fly, with protected terms, reviewed overrides and caching.",
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "translation",
+    "voice",
+    "speech",
+    "language-detection",
+    "whisper",
+    "kiosk",
+    "self-service",
+    "accessibility",
+    "i18next"
+  ],
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

@@ -56,7 +56,7 @@ export function createServerTransport(options: ServerTransportOptions): PolyTran
       });
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        throw new Error(`poly-interface: tradução ${source}->${target} falhou (${res.status}): ${body}`);
+        throw new Error(`poly: translation ${source}->${target} failed (${res.status}): ${body}`);
       }
       const data = (await res.json()) as { texts?: Record<string, string> };
       return data.texts ?? {};

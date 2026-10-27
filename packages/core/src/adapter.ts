@@ -64,7 +64,7 @@ export function createI18nextAdapter(
   const bundle = i18n.getResourceBundle(base, ns) as Nested | undefined;
   if (!bundle) {
     throw new Error(
-      `poly-interface: nenhum texto encontrado para o idioma base "${base}" no namespace "${ns}".`,
+      `poly: no texts found for base language "${base}" in namespace "${ns}".`,
     );
   }
 

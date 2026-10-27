@@ -10,7 +10,7 @@ importers:
 
   examples/hotel-kiosk:
     dependencies:
-      '@poly-interface/react':
+      '@swalay/poly-react':
         specifier: workspace:*
         version: link:../../packages/react
       i18next:
@@ -68,7 +68,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@poly-interface/core':
+      '@swalay/poly-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

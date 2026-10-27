@@ -14,7 +14,7 @@ export class TranslationCache {
 
   constructor(
     private storage: StorageLike | null = null,
-    private prefix = "poly-interface",
+    private prefix = "poly",
   ) {}
 
   private bucket(source: string, target: string): Map<string, string> {

@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { PolyProvider, createI18nextAdapter } from "@poly-interface/react";
-import "@poly-interface/react/styles.css";
+import { PolyProvider, createI18nextAdapter } from "@swalay/poly-react";
+import "@swalay/poly-react/styles.css";
 
 import App from "./App.jsx";
 import i18n from "./i18n.js";

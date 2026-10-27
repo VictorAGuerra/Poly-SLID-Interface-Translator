@@ -23,6 +23,6 @@ describe("createI18nextAdapter", () => {
   it("falha cedo se o idioma base não tiver textos", async () => {
     const i18n = i18next.createInstance();
     await i18n.init({ lng: "en", resources: {} });
-    expect(() => createI18nextAdapter(i18n)).toThrow(/idioma base/);
+    expect(() => createI18nextAdapter(i18n)).toThrow(/base language/);
   });
 });

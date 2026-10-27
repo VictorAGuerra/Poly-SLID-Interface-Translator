@@ -4,4 +4,4 @@ export { LanguagePrompt } from "./LanguagePrompt.js";
 export type { LanguagePromptProps, LanguagePromptRenderProps } from "./LanguagePrompt.js";
 
 // Reexporta o núcleo para quem usa React precisar de um pacote só.
-export * from "@poly-interface/core";
+export * from "@swalay/poly-core";

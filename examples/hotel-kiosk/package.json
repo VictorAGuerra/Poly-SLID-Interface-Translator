@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@poly-interface/react": "workspace:*",
+    "@swalay/poly-react": "workspace:*",
     "i18next": "^26.5.11",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

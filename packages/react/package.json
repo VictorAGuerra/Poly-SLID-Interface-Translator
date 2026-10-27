@@ -1,7 +1,19 @@
 {
-  "name": "@poly-interface/react",
+  "name": "@swalay/poly-react",
   "version": "0.1.0",
-  "description": "Componentes React do poly-interface: provider, hook e popup de troca de idioma por voz.",
+  "description": "React bindings for poly: provider, hook and a ready-made prompt that offers to switch the interface to the language people speak.",
+  "keywords": [
+    "react",
+    "i18n",
+    "translation",
+    "voice",
+    "speech",
+    "language-detection",
+    "kiosk",
+    "self-service",
+    "accessibility",
+    "react-i18next"
+  ],
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -26,7 +38,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@poly-interface/core": "workspace:*"
+    "@swalay/poly-core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18"

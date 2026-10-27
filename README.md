@@ -1,4 +1,4 @@
-# poly-interface
+# Poly
 
 **English** · [Português](#português)
 
@@ -27,16 +27,16 @@ asking the question in their language.
 
 | Package | Description |
 | --- | --- |
-| [`@poly-interface/core`](packages/core) | Framework-agnostic core: detection, state, translation with protected terms, cache, i18next adapter. |
-| [`@poly-interface/react`](packages/react) | `<PolyProvider>`, `usePoly()` and `<LanguagePrompt>`. |
+| [`@swalay/poly-core`](packages/core) | Framework-agnostic core: detection, state, translation with protected terms, cache, i18next adapter. |
+| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` and `<LanguagePrompt>`. |
 | [`backend`](backend) | FastAPI server with Whisper (speech → language) and Argos (translation). Will become the `poly-server` package. |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Full example: hotel check-in. |
 
 ## Usage with React + i18next
 
 ```jsx
-import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@poly-interface/react";
-import "@poly-interface/react/styles.css";
+import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@swalay/poly-react";
+import "@swalay/poly-react/styles.css";
 import i18n from "./i18n"; // i18next initialized with your English texts
 
 <PolyProvider
@@ -131,16 +131,16 @@ dela.
 
 | Pacote | Descrição |
 | --- | --- |
-| [`@poly-interface/core`](packages/core) | Núcleo sem framework: detecção, controle de estado, tradução com termos protegidos, cache, adaptador i18next. |
-| [`@poly-interface/react`](packages/react) | `<PolyProvider>`, `usePoly()` e `<LanguagePrompt>`. |
+| [`@swalay/poly-core`](packages/core) | Núcleo sem framework: detecção, controle de estado, tradução com termos protegidos, cache, adaptador i18next. |
+| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` e `<LanguagePrompt>`. |
 | [`backend`](backend) | Servidor FastAPI com Whisper (fala → idioma) e Argos (tradução). Vai virar o pacote `poly-server`. |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Exemplo completo: check-in de hotel. |
 
 ### Uso com React + i18next
 
 ```jsx
-import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@poly-interface/react";
-import "@poly-interface/react/styles.css";
+import { PolyProvider, LanguagePrompt, createI18nextAdapter } from "@swalay/poly-react";
+import "@swalay/poly-react/styles.css";
 import i18n from "./i18n"; // i18next já inicializado com os textos em inglês
 
 <PolyProvider

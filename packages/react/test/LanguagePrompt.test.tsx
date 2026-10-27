@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPoly, type I18nAdapter, type PolyTransport } from "@poly-interface/core";
+import { createPoly, type I18nAdapter, type PolyTransport } from "@swalay/poly-core";
 import { LanguagePrompt, PolyProvider, usePoly } from "../src/index.js";
 
 afterEach(cleanup);
