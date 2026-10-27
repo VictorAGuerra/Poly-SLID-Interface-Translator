@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { createPoly, type Poly, type PolyOptions, type PolyState } from "@poly-i18n/core";
+import { createPoly, type Poly, type PolyOptions, type PolyState } from "@poly-interface/core";
 
 const PolyContext = createContext<Poly | null>(null);
 
@@ -53,7 +53,7 @@ export interface UsePolyResult extends PolyState {
 
 export function usePoly(): UsePolyResult {
   const poly = useContext(PolyContext);
-  if (!poly) throw new Error("poly-i18n: usePoly() precisa estar dentro de <PolyProvider>.");
+  if (!poly) throw new Error("poly-interface: usePoly() precisa estar dentro de <PolyProvider>.");
   const state = useSyncExternalStore(poly.subscribe, poly.getState, poly.getState);
   return {
     ...state,

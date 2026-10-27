@@ -126,7 +126,7 @@ export function createPoly(options: PolyOptions): Poly {
 
   const transport =
     options.transport ?? (options.server ? createServerTransport({ url: options.server }) : null);
-  if (!transport) throw new Error("poly-i18n: informe `server` ou `transport`.");
+  if (!transport) throw new Error("poly-interface: informe `server` ou `transport`.");
 
   const baseLanguage = normalizeLanguage(options.baseLanguage) ?? "en";
   const supported = options.supportedLanguages?.map((l) => normalizeLanguage(l));

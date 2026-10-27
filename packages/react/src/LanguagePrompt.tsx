@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { languageName, textDirection } from "@poly-i18n/core";
+import { languageName, textDirection } from "@poly-interface/core";
 import { usePoly, type UsePolyResult } from "./context.js";
 
 export interface LanguagePromptRenderProps extends UsePolyResult {
@@ -21,7 +21,7 @@ export interface LanguagePromptProps {
  * idioma detectado assim que a tradução fica pronta, para que a pessoa
  * entenda a pergunta antes de a interface inteira mudar.
  *
- * O estilo padrão está em `@poly-i18n/react/styles.css`.
+ * O estilo padrão está em `@poly-interface/react/styles.css`.
  */
 export function LanguagePrompt({ className, children }: LanguagePromptProps) {
   const poly = usePoly();

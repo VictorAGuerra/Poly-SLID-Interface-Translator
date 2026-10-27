@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LanguagePrompt, languageName, usePoly } from "@poly-i18n/react";
+import { LanguagePrompt, languageName, usePoly } from "@poly-interface/react";
 import "./App.css";
 
 import polyLogo from "./assets/poly-logo.png";

@@ -10,9 +10,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: "@poly-i18n/react/styles.css", replacement: pkg("react/src/styles.css") },
-      { find: "@poly-i18n/react", replacement: pkg("react/src/index.ts") },
-      { find: "@poly-i18n/core", replacement: pkg("core/src/index.ts") },
+      { find: "@poly-interface/react/styles.css", replacement: pkg("react/src/styles.css") },
+      { find: "@poly-interface/react", replacement: pkg("react/src/index.ts") },
+      { find: "@poly-interface/core", replacement: pkg("core/src/index.ts") },
     ],
   },
 });

@@ -1,7 +1,7 @@
 {
-  "name": "@poly-i18n/react",
+  "name": "@poly-interface/react",
   "version": "0.1.0",
-  "description": "Componentes React do poly-i18n: provider, hook e popup de troca de idioma por voz.",
+  "description": "Componentes React do poly-interface: provider, hook e popup de troca de idioma por voz.",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -26,7 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@poly-i18n/core": "workspace:*"
+    "@poly-interface/core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18"
