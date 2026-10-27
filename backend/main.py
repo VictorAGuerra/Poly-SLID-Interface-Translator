@@ -5,6 +5,7 @@ import queue
 import sys
 import threading
 import time
+from contextlib import asynccontextmanager
 from typing import Dict, Tuple
 
 import numpy as np
@@ -38,7 +39,16 @@ audio_q: "queue.Queue[np.ndarray]" = queue.Queue()
 events_q: "queue.Queue[dict]" = queue.Queue()
 
 # ===== FastAPI =====
-app = FastAPI()
+_mic_thread_started = False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_mic_thread()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -46,8 +56,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_mic_thread_started = False
 
 # ===== Audio helpers =====
 def audio_callback(indata, frames, time_info, status):
@@ -221,7 +229,6 @@ def mic_worker(out_queue: "queue.Queue[dict]"):
 
 
 # ===== FastAPI lifecycle / endpoints =====
-@app.on_event("startup")
 def start_mic_thread():
     global _mic_thread_started
     if _mic_thread_started:
