@@ -31,7 +31,7 @@ instead; it re-exports everything from this package.
 npm install @swalay/poly-core i18next
 ```
 
-Requires a running `poly-server` (speech recognition + translation).
+Requires a running [`poly-server`](https://pypi.org/project/poly-server/) (speech recognition + translation). Audio can come from the server's own microphone (`audio: "server"`, kiosk mode) or be captured in the browser (`audio: "browser"`).
 
 ## Usage
 

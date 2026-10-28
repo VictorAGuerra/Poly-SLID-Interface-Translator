@@ -1,6 +1,6 @@
 {
   "name": "@swalay/poly-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Voice-driven interface translation: detects the spoken language and translates your UI texts on the fly, with protected terms, reviewed overrides and caching.",
   "keywords": [
     "i18n",
@@ -16,6 +16,13 @@
     "i18next"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator#readme",
+  "bugs": "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator/issues",
   "type": "module",
   "sideEffects": false,
   "exports": {

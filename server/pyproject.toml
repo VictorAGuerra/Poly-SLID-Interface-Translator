@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "poly-server"
+version = "0.1.0"
+description = "Speech language detection and offline UI translation server for Poly voice-driven interfaces."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Victor A. Guerra" }]
+keywords = ["i18n", "translation", "speech", "language-detection", "whisper", "kiosk", "self-service", "accessibility"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: FastAPI",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Topic :: Software Development :: Internationalization",
+]
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "faster-whisper>=1.1",
+  "argostranslate>=1.9",
+  "webrtcvad-wheels>=2.0.14",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+mic = ["sounddevice>=0.5"]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+poly-server = "poly_server.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator"
+Repository = "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator"
+Issues = "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/poly_server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: loads real models (slow, needs network on first run)"]
+addopts = "-m 'not integration'"

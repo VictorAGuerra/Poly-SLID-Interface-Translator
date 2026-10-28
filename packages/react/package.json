@@ -1,6 +1,6 @@
 {
   "name": "@swalay/poly-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React bindings for poly: provider, hook and a ready-made prompt that offers to switch the interface to the language people speak.",
   "keywords": [
     "react",
@@ -15,6 +15,13 @@
     "react-i18next"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator#readme",
+  "bugs": "https://github.com/VictorAGuerra/Poly-SLID-Interface-Translator/issues",
   "type": "module",
   "sideEffects": [
     "*.css"

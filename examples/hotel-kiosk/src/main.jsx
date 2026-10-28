@@ -13,6 +13,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <PolyProvider
       adapter={adapter}
       server={import.meta.env.VITE_POLY_SERVER ?? "http://localhost:8000"}
+      // "server": microfone do próprio servidor (quiosque).
+      // "browser": o navegador captura o microfone e envia o áudio.
+      audio={import.meta.env.VITE_POLY_AUDIO ?? "server"}
       baseLanguage="en"
       minConfidence={0.5}
       // Quiosque: volta para o inglês após 2 minutos sem ninguém usando.

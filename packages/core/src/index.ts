@@ -23,3 +23,6 @@ export { protect, restore } from "./protect.js";
 export type { ProtectOptions, ProtectedText } from "./protect.js";
 
 export { isRtl, languageName, normalizeLanguage, textDirection } from "./languages.js";
+
+export { captureMicrophone, createDownsampler } from "./audio.js";
+export type { MicrophoneCapture } from "./audio.js";

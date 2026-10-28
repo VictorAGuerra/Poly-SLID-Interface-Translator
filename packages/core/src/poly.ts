@@ -45,6 +45,8 @@ export interface PolyOptions {
   adapter: I18nAdapter;
   /** URL do poly-server. Atalho para `transport: createServerTransport({ url })`. */
   server?: string;
+  /** De onde vem o áudio quando `server` é usado. Veja `ServerTransportOptions.audio`. */
+  audio?: "server" | "browser";
   transport?: PolyTransport;
   /** Idioma em que a interface foi escrita. Padrão: "en". */
   baseLanguage?: string;
@@ -125,7 +127,7 @@ export function createPoly(options: PolyOptions): Poly {
   } = options;
 
   const transport =
-    options.transport ?? (options.server ? createServerTransport({ url: options.server }) : null);
+    options.transport ?? (options.server ? createServerTransport({ url: options.server, audio: options.audio }) : null);
   if (!transport) throw new Error("poly: provide either `server` or `transport`.");
 
   const baseLanguage = normalizeLanguage(options.baseLanguage) ?? "en";
@@ -239,6 +241,7 @@ export function createPoly(options: PolyOptions): Poly {
       disconnect = transport.connect({
         onDetection: (e) => poly.handleDetection(e),
         onConnectionChange: (connected) => setState({ connected }),
+        onError: report,
       });
     },
 

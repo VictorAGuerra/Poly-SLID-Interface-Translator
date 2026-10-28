@@ -15,7 +15,13 @@ offers to switch — already asking the question in their language.
 npm install @swalay/poly-react i18next react-i18next
 ```
 
-Requires a running `poly-server` (speech recognition + translation).
+Requires a running [`poly-server`](https://pypi.org/project/poly-server/) (speech recognition + translation):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "poly-server[mic]"
+poly-server serve
+```
 
 ## Usage
 
@@ -85,6 +91,7 @@ const { language, connected, status, lastDetection, setLanguage, reset } = usePo
 
 | Option | Default | |
 | --- | --- | --- |
+| `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |

@@ -29,7 +29,7 @@ asking the question in their language.
 | --- | --- |
 | [`@swalay/poly-core`](packages/core) | Framework-agnostic core: detection, state, translation with protected terms, cache, i18next adapter. |
 | [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` and `<LanguagePrompt>`. |
-| [`backend`](backend) | FastAPI server with Whisper (speech → language) and Argos (translation). Will become the `poly-server` package. |
+| [`poly-server`](server) | Python server: faster-whisper (speech → language) and Argos (offline translation). |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Full example: hotel check-in. |
 
 ## Usage with React + i18next
@@ -42,6 +42,7 @@ import i18n from "./i18n"; // i18next initialized with your English texts
 <PolyProvider
   adapter={createI18nextAdapter(i18n)}
   server="http://localhost:8000"
+  audio="server"     // or "browser": capture the mic in the browser
   noTranslate={["Poly Hotel"]}
   overrides={{ pt: { "brand.tag": "Autoatendimento" } }}
   idleTimeout={120_000}
@@ -69,6 +70,7 @@ between protected terms, so they are never lost.
 
 | Option | Default | |
 | --- | --- | --- |
+| `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
@@ -83,15 +85,18 @@ between protected terms, so they are never lost.
 
 Requires Node 22 (`nvm use`), pnpm and Python 3.10+.
 
+`pytest` runs the server unit tests; `pytest -m integration` also runs the real models.
+
 ```bash
 pnpm install
 pnpm test          # package tests
 pnpm build         # build packages
 
-# backend
-cd backend && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --port 8000
+# server
+cd server && python -m venv .venv && source .venv/bin/activate
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[mic,dev]"
+poly-server serve
 
 # example (in another terminal, from the repo root)
 pnpm dev           # http://localhost:5173
@@ -133,7 +138,7 @@ dela.
 | --- | --- |
 | [`@swalay/poly-core`](packages/core) | Núcleo sem framework: detecção, controle de estado, tradução com termos protegidos, cache, adaptador i18next. |
 | [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` e `<LanguagePrompt>`. |
-| [`backend`](backend) | Servidor FastAPI com Whisper (fala → idioma) e Argos (tradução). Vai virar o pacote `poly-server`. |
+| [`poly-server`](server) | Servidor Python: faster-whisper (fala → idioma) e Argos (tradução offline). |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Exemplo completo: check-in de hotel. |
 
 ### Uso com React + i18next
@@ -146,6 +151,7 @@ import i18n from "./i18n"; // i18next já inicializado com os textos em inglês
 <PolyProvider
   adapter={createI18nextAdapter(i18n)}
   server="http://localhost:8000"
+  audio="server"     // ou "browser": captura o microfone no navegador
   noTranslate={["Poly Hotel"]}
   overrides={{ pt: { "brand.tag": "Autoatendimento" } }}
   idleTimeout={120_000}
@@ -173,6 +179,7 @@ que eles nunca se percam.
 
 | Opção | Padrão | |
 | --- | --- | --- |
+| `audio` | `"server"` | `"server"`: microfone do servidor (quiosque). `"browser"`: o navegador captura e envia o áudio (exige HTTPS ou localhost). |
 | `baseLanguage` | `"en"` | Idioma em que a interface foi escrita. |
 | `minConfidence` | `0.5` | Confiança mínima da detecção (0 a 1). |
 | `supportedLanguages` | todos | Limita os idiomas oferecidos. |
@@ -187,15 +194,18 @@ que eles nunca se percam.
 
 Requer Node 22 (`nvm use`), pnpm e Python 3.10+.
 
+`pytest` roda os testes unitários do servidor; `pytest -m integration` roda também com os modelos reais.
+
 ```bash
 pnpm install
 pnpm test          # testes dos pacotes
 pnpm build         # compila os pacotes
 
-# backend
-cd backend && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --port 8000
+# server
+cd server && python -m venv .venv && source .venv/bin/activate
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[mic,dev]"
+poly-server serve
 
 # exemplo (em outro terminal, na raiz)
 pnpm dev           # http://localhost:5173
