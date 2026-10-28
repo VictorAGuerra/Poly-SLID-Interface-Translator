@@ -209,3 +209,6 @@ __marimo__/
 # Node / monorepo
 node_modules/
 *.tsbuildinfo
+
+# Pacotes gerados pelo scripts/publish-npm.sh
+dist-npm/

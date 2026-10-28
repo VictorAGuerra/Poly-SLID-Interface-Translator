@@ -1,8 +1,11 @@
 name: Release
 
-# Publica o poly-server no PyPI quando uma release é publicada no GitHub, ou
-# manualmente (Actions → Release → Run workflow). Usa Trusted Publishing:
-# nenhum token fica guardado; o PyPI confia neste repositório e workflow.
+# Publica os pacotes npm (@swalay/poly-core, @swalay/poly-react) e o
+# poly-server no PyPI quando uma release é publicada no GitHub, ou manualmente
+# (Actions → Release → Run workflow). Versões já publicadas são puladas.
+#
+# Usa Trusted Publishing nos dois registros: nenhum token fica guardado; o npm
+# e o PyPI confiam neste repositório e neste workflow.
 
 on:
   release:
@@ -47,3 +50,26 @@ jobs:
         with:
           # Releases que não mudam a versão do servidor não falham.
           skip-existing: true
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/org/swalay
+    permissions:
+      contents: read
+      id-token: write # exigido pelo Trusted Publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      # Trusted Publishing exige npm 11.5.1 ou mais novo.
+      - run: npm install -g npm@latest
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+      - run: ./scripts/publish-npm.sh
