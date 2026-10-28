@@ -1,0 +1,49 @@
+name: Release
+
+# Publica o poly-server no PyPI quando uma release é publicada no GitHub, ou
+# manualmente (Actions → Release → Run workflow). Usa Trusted Publishing:
+# nenhum token fica guardado; o PyPI confia neste repositório e workflow.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev]" build twine
+      - run: pytest
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: poly-server-dist
+          path: server/dist/
+
+  publish-pypi:
+    needs: build-server
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/poly-server/
+    permissions:
+      id-token: write # exigido pelo Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: poly-server-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Releases que não mudam a versão do servidor não falham.
+          skip-existing: true
