@@ -148,3 +148,60 @@
     animation-duration: 2s;
   }
 }
+
+/* Botão de escuta (<ListenButton>, modo listening="manual"). */
+.poly-listen {
+  --poly-listen-bg: #101828;
+  --poly-listen-fg: #ffffff;
+  --poly-listen-active: #d92d20;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--poly-listen-bg);
+  color: var(--poly-listen-fg);
+  font: inherit;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.poly-listen:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.poly-listen--active {
+  background: var(--poly-listen-active);
+}
+
+.poly-listen__icon {
+  display: inline-flex;
+}
+
+.poly-listen--active .poly-listen__icon {
+  animation: poly-pulse 1.2s ease-in-out infinite;
+}
+
+.poly-listen__status {
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@keyframes poly-pulse {
+  50% {
+    transform: scale(1.18);
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poly-listen--active .poly-listen__icon {
+    animation: none;
+  }
+}

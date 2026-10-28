@@ -77,7 +77,15 @@ export interface MicrophoneCapture {
   stop(): void;
 }
 
-/** Abre o microfone e chama `onChunk` com blocos PCM16 a 16 kHz. */
+/**
+ * Abre o microfone e chama `onChunk` com blocos PCM16 a 16 kHz.
+ *
+ * O processamento de voz do navegador (cancelamento de eco, redução de ruído,
+ * ganho automático) vem desligado: ele é feito para chamadas e, nos testes,
+ * deformava o áudio nos primeiros segundos após abrir o microfone a ponto de
+ * o Whisper confundir português com francês. Religue via `constraints` se
+ * precisar (ex.: o quiosque reproduz áudio e precisa de cancelamento de eco).
+ */
 export async function captureMicrophone(
   onChunk: (pcm16: ArrayBuffer) => void,
   constraints: MediaTrackConstraints = {},
@@ -85,9 +93,9 @@ export async function captureMicrophone(
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       channelCount: 1,
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
       ...constraints,
     },
   });

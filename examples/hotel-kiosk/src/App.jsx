@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LanguagePrompt, languageName, usePoly } from "@swalay/poly-react";
+import { LanguagePrompt, ListenButton, languageName, usePoly } from "@swalay/poly-react";
 import "./App.css";
 
 import polyLogo from "./assets/poly-logo.png";
@@ -168,6 +168,9 @@ export default function App() {
               <div className="kvV">{latency == null ? "—" : `${latency}s`}</div>
             </div>
           </div>
+
+          {/* Só aparece com listening="manual". */}
+          <ListenButton className="listenButton" />
 
           <div className="transcript">
             <div className="transcriptTitle">{t("assistant.lastText")}</div>

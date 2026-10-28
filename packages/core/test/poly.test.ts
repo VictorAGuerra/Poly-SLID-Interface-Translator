@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { I18nAdapter } from "../src/adapter.js";
 import type { DetectionEvent, PolyTransport } from "../src/client.js";
+import { UnsupportedLanguageError } from "../src/client.js";
 import { createPoly, type PolyOptions } from "../src/poly.js";
 
 function setup(opts: Partial<PolyOptions> = {}) {
@@ -71,11 +72,54 @@ describe("createPoly", () => {
     expect(poly.getState().status).toBe("prompting");
   });
 
-  it("fecha o popup sozinho após o tempo limite", () => {
+  it("fecha o popup sozinho após o tempo limite", async () => {
     const { poly } = setup({ promptTimeout: 500 });
     poly.handleDetection(speech("pt"));
+    await vi.waitFor(() => expect(poly.getState().promptReady).toBe(true));
     vi.advanceTimersByTime(501);
     expect(poly.getState().status).toBe("idle");
+  });
+
+  it("não fecha o popup enquanto a tradução dele ainda está carregando", async () => {
+    const { poly, transport } = setup({ promptTimeout: 500 });
+    let finish!: () => void;
+    vi.mocked(transport.translate).mockImplementationOnce(
+      ({ target, texts }) =>
+        new Promise((resolve) => {
+          finish = () => resolve(Object.fromEntries(Object.entries(texts).map(([k, v]) => [k, `[${target}] ${v}`])));
+        }),
+    );
+    poly.handleDetection(speech("ja"));
+    vi.advanceTimersByTime(5000); // servidor baixando o pacote de tradução
+    expect(poly.getState().status).toBe("prompting");
+
+    finish();
+    await vi.waitFor(() => expect(poly.getState().promptReady).toBe(true));
+    vi.advanceTimersByTime(400);
+    expect(poly.getState().status).toBe("prompting"); // o prazo conta a partir de agora
+    vi.advanceTimersByTime(101);
+    expect(poly.getState().status).toBe("idle");
+  });
+
+  it("idioma sem tradução fecha o popup e não é sugerido de novo", async () => {
+    const onError = vi.fn();
+    const { poly, transport } = setup({ onError });
+    vi.mocked(transport.translate).mockRejectedValue(new UnsupportedLanguageError("en", "xx"));
+    poly.handleDetection(speech("xx"));
+    await vi.waitFor(() => expect(poly.getState().status).toBe("idle"));
+    expect(onError).toHaveBeenCalledWith(expect.any(UnsupportedLanguageError));
+
+    poly.handleDetection(speech("xx"));
+    expect(poly.getState().status).toBe("idle");
+  });
+
+  it("se a tradução do popup falhar por outro motivo, mostra no idioma base e deixa escolher", async () => {
+    const { poly, transport } = setup({ onError: () => {} });
+    vi.mocked(transport.translate).mockRejectedValueOnce(new Error("rede caiu"));
+    poly.handleDetection(speech("pt"));
+    await vi.waitFor(() => expect(poly.getState().promptReady).toBe(true));
+    expect(poly.getState().status).toBe("prompting");
+    expect(poly.getState().promptTexts.confirm).toBe("Switch");
   });
 
   it("troca direto com autoSwitch", async () => {

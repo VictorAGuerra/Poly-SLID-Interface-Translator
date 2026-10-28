@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
 from typing import Callable
@@ -17,6 +18,7 @@ from . import __version__
 from .asr import Recognizer, WhisperRecognizer
 from .config import Settings
 from .events import EventHub
+from .listening import ListeningController
 from .translate import ArgosTranslator, CachedTranslator, Translator, UnsupportedLanguagePair
 from .vad import Segmenter, pcm16_to_float32
 
@@ -72,11 +74,7 @@ def create_app(
     hub = EventHub()
     state = {"mic": False}
 
-    def recognize_and_publish(audio: np.ndarray) -> None:
-        try:
-            hub.publish(recognizer.recognize(audio).to_event())
-        except Exception:
-            log.exception("recognition failed")
+    controller = ListeningController(make_segmenter(), recognizer.recognize, hub.publish)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -85,14 +83,8 @@ def create_app(
         if settings.mic:
             from .mic import MicSource
 
-            segmenter = make_segmenter()
-
-            def on_audio(block: np.ndarray) -> None:
-                for utterance in segmenter.feed(block):
-                    recognize_and_publish(utterance)
-
             try:
-                mic = MicSource(on_audio, device=settings.mic_device)
+                mic = MicSource(controller.feed, device=settings.mic_device)
                 mic.start()
                 state["mic"] = True
             except RuntimeError as e:
@@ -132,32 +124,82 @@ def create_app(
 
     @app.websocket("/ws")
     async def events(ws: WebSocket):
-        """Eventos de reconhecimento do microfone local."""
+        """
+        Eventos do microfone local, para todos os clientes. Comandos aceitos:
+        {"type": "config", "listening": "manual"} e
+        {"type": "listen", "action": "start" | "stop"}.
+        """
         await ws.accept()
         q = hub.subscribe()
-        try:
+        manual = False
+
+        async def send_events():
             while True:
                 await ws.send_json(await q.get())
-        except WebSocketDisconnect:
-            pass
+
+        async def receive_commands():
+            nonlocal manual
+            while True:
+                msg = await ws.receive_json()
+                kind = msg.get("type")
+                if kind == "config" and msg.get("listening") == "manual" and not manual:
+                    manual = True
+                    controller.add_manual_client()
+                    await ws.send_json({"type": "listening", "listening": controller.listening})
+                elif kind == "listen" and msg.get("action") == "start":
+                    await run_in_threadpool(controller.start)
+                elif kind == "listen" and msg.get("action") == "stop":
+                    await run_in_threadpool(controller.stop)
+
+        tasks = [asyncio.create_task(send_events()), asyncio.create_task(receive_commands())]
+        try:
+            done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for t in done:
+                if t.exception() and not isinstance(t.exception(), WebSocketDisconnect):
+                    log.warning("ws: %s", t.exception())
         finally:
+            for t in tasks:
+                t.cancel()
             hub.unsubscribe(q)
+            if manual:
+                controller.remove_manual_client()
 
     @app.websocket("/ws/audio")
     async def audio(ws: WebSocket):
         """
         Áudio vindo do navegador: mensagens binárias com PCM 16-bit little
         endian, mono, 16 kHz. Os eventos de reconhecimento voltam só para
-        este cliente.
+        este cliente, precedidos de {"type": "utterance_end"} quando a fala
+        termina. Mensagens de texto: {"type": "flush"} reconhece a fala em
+        andamento (botão "parar"); {"type": "reset"} descarta o áudio.
         """
         await ws.accept()
         segmenter = make_segmenter()
+
+        async def recognize_and_send(utterance: np.ndarray) -> None:
+            result = await run_in_threadpool(recognizer.recognize, utterance)
+            await ws.send_json(result.to_event())
+
         try:
             while True:
-                data = await ws.receive_bytes()
-                for utterance in segmenter.feed(pcm16_to_float32(data)):
-                    result = await run_in_threadpool(recognizer.recognize, utterance)
-                    await ws.send_json(result.to_event())
+                msg = await ws.receive()
+                if msg["type"] == "websocket.disconnect":
+                    break
+                if msg.get("bytes") is not None:
+                    for utterance in segmenter.feed(pcm16_to_float32(msg["bytes"])):
+                        # Avisa já, antes de reconhecer (leva segundos): no
+                        # modo manual o navegador fecha o microfone aqui.
+                        await ws.send_json({"type": "utterance_end"})
+                        await recognize_and_send(utterance)
+                elif msg.get("text"):
+                    kind = json.loads(msg["text"]).get("type")
+                    if kind == "flush":
+                        pending = segmenter.flush()
+                        segmenter.reset()
+                        if pending is not None:
+                            await recognize_and_send(pending)
+                    elif kind == "reset":
+                        segmenter.reset()
         except WebSocketDisconnect:
             pass
 

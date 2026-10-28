@@ -69,8 +69,8 @@ Every option can be set with a `POLY_*` environment variable:
 | --- | --- |
 | `GET /health` | `{ ok, version, mic }` |
 | `POST /i18n/auto-translate` | `{ source_lang, target_lang, texts: { key: text } }` → `{ target_lang, texts }`. Returns `422` with `code: "unsupported_language_pair"` when no translation exists. |
-| `WS /ws` | Recognition events from the local microphone, broadcast to every client. |
-| `WS /ws/audio` | Send binary PCM16 LE mono 16 kHz; receive recognition events for this client. |
+| `WS /ws` | Recognition events from the local microphone, broadcast to every client. Send `{"type":"config","listening":"manual"}` to listen only on demand, then `{"type":"listen","action":"start"\|"stop"}`; the server replies with `{"type":"listening","listening":bool}`. |
+| `WS /ws/audio` | Send binary PCM16 LE mono 16 kHz; receive `{"type":"utterance_end"}` as soon as speech ends, then the recognition event. Text messages: `{"type":"flush"}` recognizes the speech in progress, `{"type":"reset"}` discards it. |
 
 Event: `{ "type": "asr", "language": "pt", "confidence": 0.97, "text": "...", "latency_sec": 1.4 }`
 

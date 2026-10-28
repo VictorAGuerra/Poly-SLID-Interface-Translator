@@ -49,6 +49,9 @@ export interface UsePolyResult extends PolyState {
   dismiss: Poly["dismiss"];
   setLanguage: Poly["setLanguage"];
   reset: Poly["reset"];
+  startListening: Poly["startListening"];
+  stopListening: Poly["stopListening"];
+  toggleListening: Poly["toggleListening"];
 }
 
 export function usePoly(): UsePolyResult {
@@ -62,5 +65,8 @@ export function usePoly(): UsePolyResult {
     dismiss: poly.dismiss,
     setLanguage: poly.setLanguage,
     reset: poly.reset,
+    startListening: poly.startListening,
+    stopListening: poly.stopListening,
+    toggleListening: poly.toggleListening,
   };
 }

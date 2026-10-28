@@ -13,6 +13,7 @@ asking the question in their language.
   automatically (offline translation with Argos) and cached.
 - **Detection from speech** (Whisper), with a minimum confidence, noise
   filtering, and no nagging about a language the person already declined.
+  Listen all the time, or only when someone taps a button.
 - **Protected terms:** proper names, brands and variables are never translated.
 - **Reviewed translations win** over machine translation, for texts where a
   mistake is costly (healthcare, immigration, contracts).
@@ -28,7 +29,7 @@ asking the question in their language.
 | Package | Description |
 | --- | --- |
 | [`@swalay/poly-core`](packages/core) | Framework-agnostic core: detection, state, translation with protected terms, cache, i18next adapter. |
-| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` and `<LanguagePrompt>`. |
+| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()`, `<LanguagePrompt>` and `<ListenButton>`. |
 | [`poly-server`](server) | Python server: faster-whisper (speech → language) and Argos (offline translation). |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Full example: hotel check-in. |
 
@@ -71,6 +72,8 @@ between protected terms, so they are never lost.
 | Option | Default | |
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
+| `listening` | `"continuous"` | `"continuous"`: always listening. `"manual"`: only after a tap on `<ListenButton>`, until the person stops speaking or taps again. |
+| `listenTimeout` | `15000` | Manual mode: stop listening after this long (ms). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
@@ -120,7 +123,8 @@ dela.
 - **Escreva a interface em um idioma só.** Os outros são gerados
   automaticamente (tradução offline com Argos) e ficam em cache.
 - **Detecção pela fala** (Whisper), com confiança mínima, filtro de ruído e
-  sem insistir num idioma que a pessoa recusou.
+  sem insistir num idioma que a pessoa recusou. Escuta o tempo todo, ou só
+  quando alguém toca num botão.
 - **Termos protegidos:** nomes próprios, marcas e variáveis nunca são
   traduzidos.
 - **Traduções revisadas têm prioridade** sobre a automática, para textos em
@@ -137,7 +141,7 @@ dela.
 | Pacote | Descrição |
 | --- | --- |
 | [`@swalay/poly-core`](packages/core) | Núcleo sem framework: detecção, controle de estado, tradução com termos protegidos, cache, adaptador i18next. |
-| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()` e `<LanguagePrompt>`. |
+| [`@swalay/poly-react`](packages/react) | `<PolyProvider>`, `usePoly()`, `<LanguagePrompt>` e `<ListenButton>`. |
 | [`poly-server`](server) | Servidor Python: faster-whisper (fala → idioma) e Argos (tradução offline). |
 | [`examples/hotel-kiosk`](examples/hotel-kiosk) | Exemplo completo: check-in de hotel. |
 
@@ -180,6 +184,8 @@ que eles nunca se percam.
 | Opção | Padrão | |
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: microfone do servidor (quiosque). `"browser"`: o navegador captura e envia o áudio (exige HTTPS ou localhost). |
+| `listening` | `"continuous"` | `"continuous"`: escuta o tempo todo. `"manual"`: só depois de tocar no `<ListenButton>`, até a pessoa parar de falar ou tocar de novo. |
+| `listenTimeout` | `15000` | Modo manual: para de escutar após este tempo (ms). |
 | `baseLanguage` | `"en"` | Idioma em que a interface foi escrita. |
 | `minConfidence` | `0.5` | Confiança mínima da detecção (0 a 1). |
 | `supportedLanguages` | todos | Limita os idiomas oferecidos. |

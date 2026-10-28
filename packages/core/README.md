@@ -14,6 +14,8 @@ instead; it re-exports everything from this package.
 
 - Language detection events from speech, with minimum confidence, noise
   filtering and a cooldown for declined languages.
+- Continuous listening, or on demand (`listening: "manual"` +
+  `startListening()` / `stopListening()`).
 - Translates whole bundles in one request, skipping texts that are cached,
   reviewed or have nothing to translate.
 - **Protected terms:** `noTranslate` list, inline `<nt>...</nt>` markup and

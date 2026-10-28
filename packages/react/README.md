@@ -81,6 +81,25 @@ import i18n from "./i18n";
 </LanguagePrompt>
 ```
 
+### Listen on demand
+
+By default Poly listens all the time. With `listening="manual"` it only listens
+after a tap, until the person stops speaking (same silence tolerance as the
+continuous mode) or taps again — whatever was said so far is still recognized.
+In browser audio mode the microphone is only open while listening.
+
+```jsx
+<PolyProvider listening="manual" /* ... */>
+  <App />
+  <ListenButton />   {/* "Tap to speak" / "Stop", in the current UI language */}
+  <LanguagePrompt />
+</PolyProvider>
+```
+
+`<ListenButton>` also accepts a render function for a custom button, and
+`usePoly()` exposes `listening`, `startListening()`, `stopListening()` and
+`toggleListening()`.
+
 ### `usePoly()`
 
 ```jsx
@@ -92,6 +111,8 @@ const { language, connected, status, lastDetection, setLanguage, reset } = usePo
 | Option | Default | |
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
+| `listening` | `"continuous"` | `"continuous"`: always listening. `"manual"`: only after a tap on `<ListenButton>`, until the person stops speaking or taps again. |
+| `listenTimeout` | `15000` | Manual mode: stop listening after this long (ms). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
@@ -121,8 +142,10 @@ já perguntando no idioma dela.
 - `<PolyProvider>`: configura e conecta ao `poly-server`.
 - `<LanguagePrompt>`: popup pronto (estilo personalizável pelas variáveis
   `--poly-*`) ou totalmente customizado via render prop.
+- `<ListenButton>`: com `listening="manual"`, escuta só depois de um toque,
+  até a pessoa parar de falar ou tocar de novo. Textos no idioma atual.
 - `usePoly()`: idioma atual, conexão, última detecção e ações
-  (`setLanguage`, `reset`...).
+  (`setLanguage`, `reset`, `toggleListening`...).
 
 Os textos são escritos em um idioma só, com i18next. Termos marcados com
 `noTranslate`, `<nt>...</nt>` ou `{{variáveis}}` nunca são traduzidos, e

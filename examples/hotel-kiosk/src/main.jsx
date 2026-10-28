@@ -16,6 +16,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       // "server": microfone do próprio servidor (quiosque).
       // "browser": o navegador captura o microfone e envia o áudio.
       audio={import.meta.env.VITE_POLY_AUDIO ?? "server"}
+      // "continuous": escuta o tempo todo. "manual": só ao tocar no botão.
+      listening={import.meta.env.VITE_POLY_LISTENING ?? "continuous"}
       baseLanguage="en"
       minConfidence={0.5}
       // Quiosque: volta para o inglês após 2 minutos sem ninguém usando.

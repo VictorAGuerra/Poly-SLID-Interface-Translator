@@ -307,3 +307,6 @@ body { margin: 0; background: var(--bg2); color: var(--text); }
   user-select: none;
   -webkit-user-drag: none;
 }
+.listenButton{
+  margin-block: 4px 14px;
+}

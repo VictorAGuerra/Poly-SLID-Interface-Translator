@@ -87,6 +87,15 @@ class Segmenter:
 
         return done
 
+    def reset(self) -> None:
+        """Descarta tudo o que estava em andamento."""
+        self._ring.clear()
+        self._voiced = []
+        self._in_speech = False
+        self._speech_run = 0
+        self._silence_run = 0
+        self._buffer = np.zeros((0,), dtype=np.float32)
+
     def flush(self) -> np.ndarray | None:
         """Entrega a fala em andamento, se houver (ex.: ao fechar a conexão)."""
         if not self._in_speech or not self._voiced:

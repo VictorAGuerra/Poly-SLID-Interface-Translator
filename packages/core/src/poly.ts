@@ -1,6 +1,13 @@
 import type { I18nAdapter } from "./adapter.js";
 import { TranslationCache, type StorageLike } from "./cache.js";
-import { createServerTransport, type DetectionEvent, type PolyTransport } from "./client.js";
+import {
+  createServerTransport,
+  UnsupportedLanguageError,
+  type DetectionEvent,
+  type ListeningMode,
+  type PolyTransport,
+  type TransportConnection,
+} from "./client.js";
 import { normalizeLanguage, textDirection } from "./languages.js";
 import { translateBundle } from "./translator.js";
 
@@ -24,6 +31,19 @@ export const DEFAULT_PROMPT_TEXTS: PromptTexts = {
   close: "Close",
 };
 
+/** Textos do botão de escuta manual; ficam no idioma atual da interface. */
+export interface UiTexts {
+  listen: string;
+  stop: string;
+  listening: string;
+}
+
+export const DEFAULT_UI_TEXTS: UiTexts = {
+  listen: "Tap to speak",
+  stop: "Stop",
+  listening: "Listening…",
+};
+
 export type PolyStatus = "idle" | "prompting" | "switching";
 
 export interface PolyState {
@@ -38,6 +58,12 @@ export interface PolyState {
   promptTexts: PromptTexts;
   promptReady: boolean;
   lastDetection: DetectionEvent | null;
+  /** "continuous" escuta o tempo todo; "manual" só depois de `startListening()`. */
+  listenMode: ListeningMode;
+  /** Escutando agora (no modo contínuo, sempre true enquanto conectado). */
+  listening: boolean;
+  /** Textos do botão de escuta, no idioma atual. */
+  uiTexts: UiTexts;
   error: Error | null;
 }
 
@@ -83,6 +109,16 @@ export interface PolyOptions {
   storage?: StorageLike | null;
   /** Atualiza `lang` e `dir` (rtl/ltr) do <html> ao trocar de idioma. Padrão: true. */
   manageDocument?: boolean;
+  /**
+   * "continuous" (padrão): escuta o tempo todo.
+   * "manual": só escuta após `startListening()` (ex.: `<ListenButton>`), até a
+   * pessoa parar de falar ou chamar `stopListening()`.
+   */
+  listening?: ListeningMode;
+  /** No modo manual, para de escutar após este tempo, em ms. Padrão: 15000. */
+  listenTimeout?: number;
+  /** Textos do botão de escuta, no idioma base. Os que faltarem usam os padrões em inglês. */
+  uiTexts?: Partial<UiTexts>;
   onError?: (error: Error) => void;
 }
 
@@ -101,6 +137,11 @@ export interface Poly {
   reset(): Promise<void>;
   /** Informa atividade do usuário (toque, tecla) para o `idleTimeout`. */
   notifyActivity(): void;
+  /** Modo manual: começa a escutar até o fim da fala. */
+  startListening(): void;
+  /** Modo manual: para de escutar e processa o que já foi dito. */
+  stopListening(): void;
+  toggleListening(): void;
   /** Injeta uma detecção. Útil para fontes de áudio próprias e testes. */
   handleDetection(event: DetectionEvent): void;
 }
@@ -139,6 +180,10 @@ export function createPoly(options: PolyOptions): Poly {
   // Textos padrão estão em inglês; se o dev passou os próprios, estão no idioma base.
   const promptBase: PromptTexts = { ...DEFAULT_PROMPT_TEXTS, ...options.promptTexts };
   const promptSource = options.promptTexts ? baseLanguage : "en";
+  const uiBase: UiTexts = { ...DEFAULT_UI_TEXTS, ...options.uiTexts };
+  const uiSource = options.uiTexts ? baseLanguage : "en";
+  const listenMode: ListeningMode = options.listening ?? "continuous";
+  const listenTimeout = options.listenTimeout ?? 15_000;
 
   let state: PolyState = {
     connected: false,
@@ -148,12 +193,19 @@ export function createPoly(options: PolyOptions): Poly {
     promptTexts: promptBase,
     promptReady: false,
     lastDetection: null,
+    listenMode,
+    listening: false,
+    uiTexts: uiBase,
     error: null,
   };
 
   const listeners = new Set<() => void>();
   const declined = new Map<string, number>();
-  let disconnect: (() => void) | null = null;
+  // Idiomas para os quais o servidor não tem tradução: não adianta oferecer.
+  const unsupported = new Set<string>();
+  let connection: TransportConnection | null = null;
+  let listenTimer: ReturnType<typeof setTimeout> | undefined;
+  let uiRequest = 0;
   let promptTimer: ReturnType<typeof setTimeout> | undefined;
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let promptRequest = 0;
@@ -213,9 +265,45 @@ export function createPoly(options: PolyOptions): Poly {
       );
       if (id !== promptRequest) return; // popup já fechou ou mudou de idioma
       setState({ promptTexts: texts as unknown as PromptTexts, promptReady: true });
+      // O prazo para fechar sozinho só começa quando a pessoa consegue ler e
+      // responder. Na primeira vez que um idioma aparece, o servidor pode
+      // levar vários segundos baixando o pacote de tradução.
+      armPromptTimer();
     } catch (e) {
-      if (id === promptRequest) report(e);
+      if (id !== promptRequest) return;
+      report(e);
+      if (e instanceof UnsupportedLanguageError) {
+        unsupported.add(language);
+        closePrompt();
+      } else {
+        // Falha temporária: pergunta no idioma base, mas deixa escolher.
+        setState({ promptReady: true });
+        armPromptTimer();
+      }
     }
+  }
+
+  async function loadUiTexts(language: string) {
+    const id = ++uiRequest;
+    try {
+      const texts = await translateBundle(
+        uiBase as unknown as Record<string, string>,
+        uiSource,
+        language,
+        { ...translateOptions(language), overrides: undefined, noTranslateKeys: undefined },
+      );
+      if (id === uiRequest) setState({ uiTexts: texts as unknown as UiTexts });
+    } catch {
+      // Sem tradução: o botão continua no idioma de origem dos textos.
+    }
+  }
+
+  function setListening(listening: boolean) {
+    clearTimeout(listenTimer);
+    if (listening && listenMode === "manual" && listenTimeout > 0) {
+      listenTimer = setTimeout(() => poly.stopListening(), listenTimeout);
+    }
+    if (state.listening !== listening) setState({ listening });
   }
 
   function armIdleTimer() {
@@ -235,22 +323,51 @@ export function createPoly(options: PolyOptions): Poly {
     },
 
     start() {
-      if (disconnect) return;
+      if (connection) return;
       applyDocument(state.language);
       armIdleTimer();
-      disconnect = transport.connect({
-        onDetection: (e) => poly.handleDetection(e),
-        onConnectionChange: (connected) => setState({ connected }),
-        onError: report,
-      });
+      if (listenMode === "manual" && state.language !== uiSource) void loadUiTexts(state.language);
+      const result = transport.connect(
+        {
+          onDetection: (e) => poly.handleDetection(e),
+          onConnectionChange: (connected) => {
+            const patch: Partial<PolyState> = { connected };
+            if (listenMode === "continuous") patch.listening = connected;
+            setState(patch);
+          },
+          onListeningChange: setListening,
+          onError: report,
+        },
+        { listening: listenMode },
+      );
+      connection = typeof result === "function" ? { close: result } : result;
     },
 
     stop() {
-      disconnect?.();
-      disconnect = null;
+      connection?.close();
+      connection = null;
       clearTimeout(promptTimer);
       clearTimeout(idleTimer);
-      setState({ connected: false });
+      clearTimeout(listenTimer);
+      setState({ connected: false, listening: false });
+    },
+
+    startListening() {
+      if (listenMode !== "manual" || !connection || state.listening) return;
+      armIdleTimer();
+      setListening(true);
+      connection.setListening?.(true);
+    },
+
+    stopListening() {
+      if (listenMode !== "manual" || !state.listening) return;
+      setListening(false);
+      connection?.setListening?.(false);
+    },
+
+    toggleListening() {
+      if (state.listening) poly.stopListening();
+      else poly.startListening();
     },
 
     handleDetection(event) {
@@ -264,6 +381,7 @@ export function createPoly(options: PolyOptions): Poly {
       if (event.text.trim().length < minTextLength) return;
       if (supported && !supported.includes(language)) return;
       if (language === state.language) return;
+      if (unsupported.has(language)) return;
 
       const until = declined.get(language);
       if (until !== undefined && Date.now() < until) return;
@@ -275,7 +393,7 @@ export function createPoly(options: PolyOptions): Poly {
 
       if (state.status === "prompting" && state.pending?.language === language) {
         setState({ pending: { language, confidence: event.confidence } });
-        armPromptTimer();
+        if (state.promptReady) armPromptTimer();
         return;
       }
 
@@ -286,7 +404,6 @@ export function createPoly(options: PolyOptions): Poly {
         promptReady: false,
         error: null,
       });
-      armPromptTimer();
       void loadPromptTexts(language);
     },
 
@@ -323,6 +440,12 @@ export function createPoly(options: PolyOptions): Poly {
         await adapter.changeLanguage(target);
         if (id !== switchRequest) return;
         applyDocument(target);
+        if (listenMode === "manual") {
+          if (target === uiSource) {
+            uiRequest++;
+            setState({ uiTexts: uiBase });
+          } else void loadUiTexts(target);
+        }
         promptRequest++;
         setState({
           language: target,
@@ -333,6 +456,7 @@ export function createPoly(options: PolyOptions): Poly {
         });
       } catch (e) {
         if (id !== switchRequest) return;
+        if (e instanceof UnsupportedLanguageError) unsupported.add(target);
         setState({ status: "idle", pending: null, promptReady: false });
         report(e);
       }

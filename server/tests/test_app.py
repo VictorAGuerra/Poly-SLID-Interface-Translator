@@ -51,6 +51,7 @@ def test_audio_do_navegador_vira_evento(make_client):
             audio = np.concatenate([silence(0.3), tone(1.0), silence(1.0)])
             for i in range(0, len(audio), 4096):  # ~256 ms por mensagem
                 ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            assert ws.receive_json() == {"type": "utterance_end"}
             event = ws.receive_json()
     assert event == {"type": "asr", "language": "ja", "confidence": 0.93, "text": "こんにちは", "latency_sec": 0.01}
     assert len(rec.calls) == 1
@@ -63,6 +64,7 @@ def test_audio_real_com_vad_real(make_client, sample_audio):
             audio = np.concatenate([sample_audio("pt-BR.mp3"), silence(1.0)])
             for i in range(0, len(audio), 4096):
                 ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            assert ws.receive_json()["type"] == "utterance_end"
             assert ws.receive_json()["type"] == "asr"
 
 
@@ -76,3 +78,25 @@ def test_hub_entrega_para_todos_os_clientes():
         return a.get_nowait(), b.get_nowait()
 
     assert asyncio.run(scenario()) == ({"n": 1}, {"n": 1})
+
+
+def test_escuta_manual_pelo_websocket(make_client):
+    with make_client() as c:
+        with c.websocket_connect("/ws") as ws:
+            ws.send_json({"type": "config", "listening": "manual"})
+            assert ws.receive_json() == {"type": "listening", "listening": False}
+            ws.send_json({"type": "listen", "action": "start"})
+            assert ws.receive_json() == {"type": "listening", "listening": True}
+            ws.send_json({"type": "listen", "action": "stop"})
+            assert ws.receive_json() == {"type": "listening", "listening": False}
+
+
+def test_audio_do_navegador_flush_reconhece_fala_em_andamento(make_client):
+    rec = FakeRecognizer(language="es")
+    with make_client(recognizer=rec, segmenter_factory=lambda: Segmenter(is_speech=energy_vad)) as c:
+        with c.websocket_connect("/ws/audio") as ws:
+            audio = np.concatenate([silence(0.2), tone(0.8)])  # sem silêncio no fim
+            for i in range(0, len(audio), 4096):
+                ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            ws.send_text('{"type": "flush"}')
+            assert ws.receive_json()["language"] == "es"

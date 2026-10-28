@@ -1,14 +1,16 @@
-export { createPoly, DEFAULT_PROMPT_TEXTS } from "./poly.js";
-export type { Poly, PolyOptions, PolyState, PolyStatus, PromptTexts } from "./poly.js";
+export { createPoly, DEFAULT_PROMPT_TEXTS, DEFAULT_UI_TEXTS } from "./poly.js";
+export type { Poly, PolyOptions, PolyState, PolyStatus, PromptTexts, UiTexts } from "./poly.js";
 
 export { createI18nextAdapter, stripMarkup } from "./adapter.js";
 export type { I18nAdapter, I18nextAdapterOptions } from "./adapter.js";
 
-export { createServerTransport } from "./client.js";
+export { createServerTransport, UnsupportedLanguageError } from "./client.js";
 export type {
   DetectionEvent,
   DetectionHandlers,
+  ListeningMode,
   PolyTransport,
+  TransportConnection,
   ServerTransportOptions,
   TranslateRequest,
 } from "./client.js";
