@@ -118,7 +118,7 @@ export interface PolyOptions {
   /**
    * No modo manual, para de escutar se ninguém começar a falar dentro deste
    * tempo, em ms. Depois que a fala começa, a escuta termina pelo silêncio.
-   * Padrão: 3000.
+   * Padrão: 15000.
    */
   listenTimeout?: number;
   /** Textos do botão de escuta, no idioma base. Os que faltarem usam os padrões em inglês. */
@@ -187,7 +187,7 @@ export function createPoly(options: PolyOptions): Poly {
   const uiBase: UiTexts = { ...DEFAULT_UI_TEXTS, ...options.uiTexts };
   const uiSource = options.uiTexts ? baseLanguage : "en";
   const listenMode: ListeningMode = options.listening ?? "continuous";
-  const listenTimeout = options.listenTimeout ?? 3000;
+  const listenTimeout = options.listenTimeout ?? 15_000;
 
   let state: PolyState = {
     connected: false,

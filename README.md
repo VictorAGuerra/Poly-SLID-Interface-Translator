@@ -73,7 +73,7 @@ between protected terms, so they are never lost.
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
 | `listening` | `"continuous"` | `"continuous"`: always listening. `"manual"`: only after a tap on `<ListenButton>`, until the person stops speaking or taps again. |
-| `listenTimeout` | `3000` | Manual mode: stop if nobody starts speaking within this time (ms). |
+| `listenTimeout` | `15000` | Manual mode: stop if nobody starts speaking within this time (ms). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
@@ -185,7 +185,7 @@ que eles nunca se percam.
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: microfone do servidor (quiosque). `"browser"`: o navegador captura e envia o áudio (exige HTTPS ou localhost). |
 | `listening` | `"continuous"` | `"continuous"`: escuta o tempo todo. `"manual"`: só depois de tocar no `<ListenButton>`, até a pessoa parar de falar ou tocar de novo. |
-| `listenTimeout` | `3000` | Modo manual: para se ninguém começar a falar dentro deste tempo (ms). |
+| `listenTimeout` | `15000` | Modo manual: para se ninguém começar a falar dentro deste tempo (ms). |
 | `baseLanguage` | `"en"` | Idioma em que a interface foi escrita. |
 | `minConfidence` | `0.5` | Confiança mínima da detecção (0 a 1). |
 | `supportedLanguages` | todos | Limita os idiomas oferecidos. |

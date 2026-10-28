@@ -64,10 +64,12 @@ describe("escuta manual", () => {
     expect(poly.getState().listening).toBe(false);
   });
 
-  it("para após 3 s se ninguém começar a falar", () => {
+  it("para após 15 s se ninguém começar a falar", () => {
     const { poly, setListening } = setup({ listening: "manual" });
     poly.startListening();
-    vi.advanceTimersByTime(3001);
+    vi.advanceTimersByTime(14_000);
+    expect(poly.getState().listening).toBe(true);
+    vi.advanceTimersByTime(1001);
     expect(poly.getState().listening).toBe(false);
     expect(setListening).toHaveBeenLastCalledWith(false);
   });
@@ -77,7 +79,7 @@ describe("escuta manual", () => {
     poly.startListening();
     vi.advanceTimersByTime(1000);
     handlers().onSpeechStart?.();
-    vi.advanceTimersByTime(10_000); // frase longa
+    vi.advanceTimersByTime(20_000); // passou dos 15 s, mas a pessoa está falando
     expect(poly.getState().listening).toBe(true);
     handlers().onListeningChange?.(false); // silêncio
     expect(poly.getState().listening).toBe(false);

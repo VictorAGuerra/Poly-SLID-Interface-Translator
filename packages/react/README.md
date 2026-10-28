@@ -112,7 +112,7 @@ const { language, connected, status, lastDetection, setLanguage, reset } = usePo
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
 | `listening` | `"continuous"` | `"continuous"`: always listening. `"manual"`: only after a tap on `<ListenButton>`, until the person stops speaking or taps again. |
-| `listenTimeout` | `3000` | Manual mode: stop if nobody starts speaking within this time (ms). |
+| `listenTimeout` | `15000` | Manual mode: stop if nobody starts speaking within this time (ms). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
