@@ -157,17 +157,16 @@
 
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  padding: 0 22px;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: var(--poly-listen-bg);
   color: var(--poly-listen-fg);
-  font: inherit;
-  font-weight: 800;
-  font-size: 16px;
   cursor: pointer;
+  transition: background 150ms ease;
 }
 
 .poly-listen:disabled {
@@ -187,10 +186,16 @@
   animation: poly-pulse 1.2s ease-in-out infinite;
 }
 
-.poly-listen__status {
-  font-weight: 600;
-  font-size: 13px;
-  opacity: 0.85;
+/* Anel pulsando enquanto escuta. */
+.poly-listen--active {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--poly-listen-active) 60%, transparent);
+  animation: poly-ring 1.4s ease-out infinite;
+}
+
+@keyframes poly-ring {
+  to {
+    box-shadow: 0 0 0 16px transparent;
+  }
 }
 
 @keyframes poly-pulse {
@@ -201,6 +206,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .poly-listen--active,
   .poly-listen--active .poly-listen__icon {
     animation: none;
   }

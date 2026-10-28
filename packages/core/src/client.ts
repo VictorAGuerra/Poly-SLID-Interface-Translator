@@ -41,6 +41,8 @@ export interface DetectionHandlers {
   onConnectionChange(connected: boolean): void;
   /** Escuta manual começou ou terminou. */
   onListeningChange?(listening: boolean): void;
+  /** A pessoa começou a falar. */
+  onSpeechStart?(): void;
   /** Erros que não derrubam a conexão (ex.: permissão de microfone negada). */
   onError?(error: Error): void;
 }
@@ -112,7 +114,7 @@ export function createServerTransport(options: ServerTransportOptions): PolyTran
       return data.texts ?? {};
     },
 
-    connect({ onDetection, onConnectionChange, onListeningChange, onError }, connectOptions = {}) {
+    connect({ onDetection, onConnectionChange, onListeningChange, onSpeechStart, onError }, connectOptions = {}) {
       const manual = connectOptions.listening === "manual";
       let ws: WebSocket | null = null;
       let closed = false;
@@ -189,6 +191,10 @@ export function createServerTransport(options: ServerTransportOptions): PolyTran
           }
           if (data.type === "listening") {
             setListeningState(Boolean(data.listening));
+            return;
+          }
+          if (data.type === "speech_start") {
+            onSpeechStart?.();
             return;
           }
           if (data.type === "utterance_end" || data.type === "asr") {

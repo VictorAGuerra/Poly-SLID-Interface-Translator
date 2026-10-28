@@ -51,6 +51,7 @@ def test_audio_do_navegador_vira_evento(make_client):
             audio = np.concatenate([silence(0.3), tone(1.0), silence(1.0)])
             for i in range(0, len(audio), 4096):  # ~256 ms por mensagem
                 ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            assert ws.receive_json() == {"type": "speech_start"}
             assert ws.receive_json() == {"type": "utterance_end"}
             event = ws.receive_json()
     assert event == {"type": "asr", "language": "ja", "confidence": 0.93, "text": "こんにちは", "latency_sec": 0.01}
@@ -64,6 +65,7 @@ def test_audio_real_com_vad_real(make_client, sample_audio):
             audio = np.concatenate([sample_audio("pt-BR.mp3"), silence(1.0)])
             for i in range(0, len(audio), 4096):
                 ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            assert ws.receive_json()["type"] == "speech_start"
             assert ws.receive_json()["type"] == "utterance_end"
             assert ws.receive_json()["type"] == "asr"
 
@@ -98,5 +100,6 @@ def test_audio_do_navegador_flush_reconhece_fala_em_andamento(make_client):
             audio = np.concatenate([silence(0.2), tone(0.8)])  # sem silêncio no fim
             for i in range(0, len(audio), 4096):
                 ws.send_bytes(float32_to_pcm16(audio[i : i + 4096]))
+            assert ws.receive_json() == {"type": "speech_start"}
             ws.send_text('{"type": "flush"}')
             assert ws.receive_json()["language"] == "es"

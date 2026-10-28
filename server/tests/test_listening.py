@@ -29,7 +29,7 @@ def test_modo_continuo_reconhece_toda_fala():
     c, events, _ = make()
     feed(c, speech())
     feed(c, speech())
-    assert kinds(events) == [("asr", None), ("asr", None)]
+    assert kinds(events) == [("speech_start", None), ("asr", None)] * 2
 
 
 def test_modo_manual_ignora_fala_sem_clique():
@@ -45,7 +45,7 @@ def test_modo_manual_escuta_ate_o_silencio_e_para_sozinho():
     c.start()
     feed(c, speech())
     feed(c, speech())  # depois do silêncio, voltou a ignorar
-    assert kinds(events) == [("listening", True), ("asr", None), ("listening", False)]
+    assert kinds(events) == [("listening", True), ("speech_start", None), ("asr", None), ("listening", False)]
     assert not c.listening
 
 
@@ -55,7 +55,7 @@ def test_parar_no_meio_reconhece_o_que_foi_dito():
     c.start()
     feed(c, np.concatenate([silence(0.2), tone(0.8)]))  # ainda falando
     c.stop()
-    assert kinds(events) == [("listening", True), ("asr", None), ("listening", False)]
+    assert kinds(events) == [("listening", True), ("speech_start", None), ("asr", None), ("listening", False)]
     assert len(rec.calls[0]) > 16000 * 0.6
 
 
@@ -74,4 +74,4 @@ def test_ultimo_cliente_manual_saindo_volta_ao_continuo():
     c.add_manual_client()
     c.remove_manual_client()
     feed(c, speech())
-    assert kinds(events) == [("asr", None)]
+    assert kinds(events) == [("speech_start", None), ("asr", None)]

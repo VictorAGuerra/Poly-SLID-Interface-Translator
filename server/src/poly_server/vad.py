@@ -87,6 +87,10 @@ class Segmenter:
 
         return done
 
+    @property
+    def in_speech(self) -> bool:
+        return self._in_speech
+
     def reset(self) -> None:
         """Descarta tudo o que estava em andamento."""
         self._ring.clear()

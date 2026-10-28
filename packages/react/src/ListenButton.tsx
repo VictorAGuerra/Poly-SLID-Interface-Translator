@@ -30,6 +30,8 @@ export function ListenButton({ className, children }: ListenButtonProps) {
   if (children) return <>{children({ ...poly, toggle, disabled })}</>;
 
   const { listening, uiTexts: t } = poly;
+  // Só o ícone na tela; o texto fica para leitores de tela e para o tooltip.
+  const label = listening ? `${t.listening} ${t.stop}` : t.listen;
   return (
     <button
       type="button"
@@ -37,20 +39,16 @@ export function ListenButton({ className, children }: ListenButtonProps) {
       onClick={toggle}
       disabled={disabled}
       aria-pressed={listening}
+      aria-label={label}
+      title={label}
     >
       <span className="poly-listen__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="9" y="2" width="6" height="12" rx="3" />
           <path d="M5 10a7 7 0 0 0 14 0" />
           <path d="M12 17v5" />
         </svg>
       </span>
-      <span className="poly-listen__label">{listening ? t.stop : t.listen}</span>
-      {listening && (
-        <span className="poly-listen__status" role="status">
-          {t.listening}
-        </span>
-      )}
     </button>
   );
 }

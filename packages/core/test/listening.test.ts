@@ -64,12 +64,23 @@ describe("escuta manual", () => {
     expect(poly.getState().listening).toBe(false);
   });
 
-  it("para após o tempo limite se ninguém falar", () => {
-    const { poly, setListening } = setup({ listening: "manual", listenTimeout: 3000 });
+  it("para após 3 s se ninguém começar a falar", () => {
+    const { poly, setListening } = setup({ listening: "manual" });
     poly.startListening();
     vi.advanceTimersByTime(3001);
     expect(poly.getState().listening).toBe(false);
     expect(setListening).toHaveBeenLastCalledWith(false);
+  });
+
+  it("não corta quem já começou a falar", () => {
+    const { poly, handlers } = setup({ listening: "manual" });
+    poly.startListening();
+    vi.advanceTimersByTime(1000);
+    handlers().onSpeechStart?.();
+    vi.advanceTimersByTime(10_000); // frase longa
+    expect(poly.getState().listening).toBe(true);
+    handlers().onListeningChange?.(false); // silêncio
+    expect(poly.getState().listening).toBe(false);
   });
 
   it("traduz os textos do botão ao trocar de idioma", async () => {

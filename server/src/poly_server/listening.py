@@ -79,12 +79,16 @@ class ListeningController:
         with self._lock:
             if self.manual and not self._listening:
                 return
+            was_speaking = self._segmenter.in_speech
             utterances = self._segmenter.feed(block)
+            started = not was_speaking and (self._segmenter.in_speech or bool(utterances))
             ended = bool(utterances) and self.manual
             if ended:
                 # Fim da fala (silêncio): a escuta manual termina aqui.
                 self._listening = False
                 self._reset()
+        if started:
+            self._publish({"type": "speech_start"})
         for u in utterances:
             self._emit(u)
         if ended:

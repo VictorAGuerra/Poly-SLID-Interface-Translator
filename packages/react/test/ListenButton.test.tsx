@@ -41,7 +41,8 @@ describe("<ListenButton>", () => {
     fireEvent.click(button);
     expect(setListening).toHaveBeenCalledWith(true);
     expect(button.getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("status").textContent).toBe("Listening…");
+    expect(button.textContent).toBe(""); // só o ícone
+    expect(button.getAttribute("aria-label")).toBe("Listening… Stop");
 
     act(() => handlers().onListeningChange?.(false));
     expect(button.getAttribute("aria-pressed")).toBe("false");

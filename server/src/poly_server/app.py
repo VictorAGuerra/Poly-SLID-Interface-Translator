@@ -169,8 +169,8 @@ def create_app(
         """
         Áudio vindo do navegador: mensagens binárias com PCM 16-bit little
         endian, mono, 16 kHz. Os eventos de reconhecimento voltam só para
-        este cliente, precedidos de {"type": "utterance_end"} quando a fala
-        termina. Mensagens de texto: {"type": "flush"} reconhece a fala em
+        este cliente: {"type": "speech_start"} quando a fala começa e
+        {"type": "utterance_end"} quando termina, antes do reconhecimento. Mensagens de texto: {"type": "flush"} reconhece a fala em
         andamento (botão "parar"); {"type": "reset"} descarta o áudio.
         """
         await ws.accept()
@@ -186,7 +186,11 @@ def create_app(
                 if msg["type"] == "websocket.disconnect":
                     break
                 if msg.get("bytes") is not None:
-                    for utterance in segmenter.feed(pcm16_to_float32(msg["bytes"])):
+                    was_speaking = segmenter.in_speech
+                    utterances = segmenter.feed(pcm16_to_float32(msg["bytes"]))
+                    if not was_speaking and (segmenter.in_speech or utterances):
+                        await ws.send_json({"type": "speech_start"})
+                    for utterance in utterances:
                         # Avisa já, antes de reconhecer (leva segundos): no
                         # modo manual o navegador fecha o microfone aqui.
                         await ws.send_json({"type": "utterance_end"})

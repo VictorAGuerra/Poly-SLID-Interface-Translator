@@ -91,7 +91,7 @@ In browser audio mode the microphone is only open while listening.
 ```jsx
 <PolyProvider listening="manual" /* ... */>
   <App />
-  <ListenButton />   {/* "Tap to speak" / "Stop", in the current UI language */}
+  <ListenButton />   {/* microphone icon; accessible label in the current UI language */}
   <LanguagePrompt />
 </PolyProvider>
 ```
@@ -112,7 +112,7 @@ const { language, connected, status, lastDetection, setLanguage, reset } = usePo
 | --- | --- | --- |
 | `audio` | `"server"` | `"server"`: the server's microphone (kiosk). `"browser"`: the browser captures and streams the mic (needs HTTPS or localhost). |
 | `listening` | `"continuous"` | `"continuous"`: always listening. `"manual"`: only after a tap on `<ListenButton>`, until the person stops speaking or taps again. |
-| `listenTimeout` | `15000` | Manual mode: stop listening after this long (ms). |
+| `listenTimeout` | `3000` | Manual mode: stop if nobody starts speaking within this time (ms). |
 | `baseLanguage` | `"en"` | Language the UI is written in. |
 | `minConfidence` | `0.5` | Minimum detection confidence (0 to 1). |
 | `supportedLanguages` | all | Restricts which languages are offered. |
@@ -142,8 +142,8 @@ já perguntando no idioma dela.
 - `<PolyProvider>`: configura e conecta ao `poly-server`.
 - `<LanguagePrompt>`: popup pronto (estilo personalizável pelas variáveis
   `--poly-*`) ou totalmente customizado via render prop.
-- `<ListenButton>`: com `listening="manual"`, escuta só depois de um toque,
-  até a pessoa parar de falar ou tocar de novo. Textos no idioma atual.
+- `<ListenButton>`: botão com ícone de microfone. Com `listening="manual"`,
+  escuta só depois de um toque, até a pessoa parar de falar ou tocar de novo.
 - `usePoly()`: idioma atual, conexão, última detecção e ações
   (`setLanguage`, `reset`, `toggleListening`...).
 
