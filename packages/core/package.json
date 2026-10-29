@@ -1,6 +1,6 @@
 {
   "name": "@swalay/poly-core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Voice-driven interface translation: detects the spoken language and translates your UI texts on the fly, with protected terms, reviewed overrides and caching.",
   "keywords": [
     "i18n",

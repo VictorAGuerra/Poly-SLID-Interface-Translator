@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeRecognizer, FakeTranslator, energy_vad, silence, tone
-from poly_server import Settings, create_app
+from poly_server import Settings, __version__, create_app
 from poly_server.events import EventHub
 from poly_server.vad import Segmenter, float32_to_pcm16
 
@@ -27,7 +27,7 @@ def make_client(tmp_path):
 
 def test_health(make_client):
     with make_client() as c:
-        assert c.get("/health").json() == {"ok": True, "version": "0.1.0", "mic": False}
+        assert c.get("/health").json() == {"ok": True, "version": __version__, "mic": False}
 
 
 def test_traduz_mantendo_as_chaves(make_client):

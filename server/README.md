@@ -44,6 +44,14 @@ poly-server download --base en --languages pt,es,fr,ar,ja,zh
 poly-server serve --offline
 ```
 
+To ship the UI translations with the app, so languages switch instantly
+without calling the server, generate them with
+[`poly cache`](https://www.npmjs.com/package/@swalay/poly-core#poly-cache):
+
+```bash
+npx @swalay/poly-core cache locales/en.json --to pt,es,fr,ar,ja,zh
+```
+
 ## Configuration
 
 Every option can be set with a `POLY_*` environment variable:
@@ -94,15 +102,96 @@ MIT
 ## Português
 
 Servidor de detecção do idioma falado e tradução offline de interfaces para o
-Poly.
+[Poly](https://www.npmjs.com/package/@swalay/poly-react), interfaces guiadas
+pela voz para autoatendimento.
 
-- **Fala → idioma** com faster-whisper.
-- **Tradução** com Argos Translate, 100% offline, passando pelo inglês quando
-  não há pacote direto entre dois idiomas, e com cache em disco (SQLite).
-- **Dois modos de áudio:** o microfone do próprio servidor (quiosque) ou o
-  áudio enviado pelo navegador.
+- **Fala → idioma** com [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
+- **Tradução da interface** com [Argos Translate](https://github.com/argosopentech/argos-translate),
+  100% offline, passando pelo inglês quando não há pacote direto entre dois
+  idiomas, e com cache persistente em SQLite.
+- **Dois modos de áudio:** o microfone do próprio servidor (quiosque: tela e
+  servidor na mesma máquina) ou o áudio enviado pelo navegador.
 - Nada sai do aparelho: nenhuma API na nuvem.
 
-Instalação, execução e configuração: veja os comandos acima. Para quiosques
-sem internet, rode `poly-server download` na instalação e depois
-`poly-server serve --offline`.
+### Instalação
+
+```bash
+# PyTorch só para CPU primeiro (o Argos precisa dele); evita ~3 GB de bibliotecas CUDA
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "poly-server[mic]"
+```
+
+O extra `mic` habilita a captura do microfone local (precisa do PortAudio:
+`sudo apt install libportaudio2` no Debian/Ubuntu). Dispense-o se o áudio vier
+só do navegador.
+
+### Execução
+
+```bash
+poly-server serve                     # http://127.0.0.1:8000, microfone local
+poly-server serve --no-mic            # só áudio do navegador
+poly-server devices                   # lista os microfones
+poly-server serve --mic-device 2
+```
+
+#### Quiosques offline
+
+Baixe tudo uma vez na instalação e depois rode sem rede:
+
+```bash
+poly-server download --base en --languages pt,es,fr,ar,ja,zh
+poly-server serve --offline
+```
+
+Para distribuir as traduções da interface junto com o app, e os idiomas
+trocarem na hora sem chamar o servidor, gere-as com o
+[`poly cache`](https://www.npmjs.com/package/@swalay/poly-core#poly-cache-comando):
+
+```bash
+npx @swalay/poly-core cache locales/en.json --to pt,es,fr,ar,ja,zh
+```
+
+### Configuração
+
+Toda opção pode ser definida por uma variável de ambiente `POLY_*`:
+
+| Variável | Padrão | |
+| --- | --- | --- |
+| `POLY_HOST` / `POLY_PORT` | `127.0.0.1` / `8000` | |
+| `POLY_CORS_ORIGINS` | `*` | Origens permitidas, separadas por vírgula. |
+| `POLY_MIC` | `true` | Captura o microfone local. |
+| `POLY_MIC_DEVICE` | padrão do sistema | Índice ou nome do dispositivo de entrada. |
+| `POLY_WHISPER_MODEL` | `base` | `tiny`, `base`, `small`, `medium`, `large-v3`. |
+| `POLY_WHISPER_DEVICE` | `auto` | `cpu`, `cuda`, `auto`. |
+| `POLY_WHISPER_COMPUTE_TYPE` | `int8` | |
+| `POLY_VAD_MODE` | `2` | Detecção de voz de 0 (tolerante) a 3 (agressiva). |
+| `POLY_END_TRIGGER_MS` | `600` | Silêncio que encerra uma fala. |
+| `POLY_MAX_UTTERANCE_SEC` | `12` | |
+| `POLY_CACHE_DIR` | `~/.cache/poly-server` | Modelos e cache de traduções. |
+| `POLY_AUTO_DOWNLOAD` | `true` | Baixa pacotes de tradução sob demanda. |
+
+### API
+
+| Endpoint | |
+| --- | --- |
+| `GET /health` | `{ ok, version, mic }` |
+| `POST /i18n/auto-translate` | `{ source_lang, target_lang, texts: { chave: texto } }` → `{ target_lang, texts }`. Retorna `422` com `code: "unsupported_language_pair"` quando não há tradução. |
+| `WS /ws` | Eventos de reconhecimento do microfone local, enviados a todos os clientes. Envie `{"type":"config","listening":"manual"}` para escutar só sob demanda e depois `{"type":"listen","action":"start"\|"stop"}`; o servidor responde com `{"type":"listening","listening":bool}` e `{"type":"speech_start"}`. |
+| `WS /ws/audio` | Envie PCM16 LE mono 16 kHz em binário; receba `{"type":"speech_start"}` / `{"type":"utterance_end"}` quando a fala começa e termina, e depois o evento de reconhecimento. Mensagens de texto: `{"type":"flush"}` reconhece a fala em andamento, `{"type":"reset"}` a descarta. |
+
+Evento: `{ "type": "asr", "language": "pt", "confidence": 0.97, "text": "...", "latency_sec": 1.4 }`
+
+#### Uso embutido
+
+```python
+from poly_server import Settings, create_app
+
+app = create_app(Settings(mic=False, whisper_model="small"))
+```
+
+O `create_app` também aceita objetos `recognizer` e `translator` próprios, para
+usar outro modelo de fala ou serviço de tradução.
+
+### Licença
+
+MIT

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "poly-server"
-version = "0.1.0"
+version = "0.1.1"
 description = "Speech language detection and offline UI translation server for Poly voice-driven interfaces."
 readme = "README.md"
 license = "MIT"
