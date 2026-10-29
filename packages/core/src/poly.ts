@@ -103,6 +103,12 @@ export interface PolyOptions {
   noTranslateKeys?: readonly string[];
   /** Traduções revisadas por humanos: { idioma: { chave: texto } }. Têm prioridade. */
   overrides?: Record<string, Record<string, string>>;
+  /**
+   * Traduções geradas com `poly cache`: { idioma: { texto de origem: tradução } }.
+   * Entram no cache na inicialização, então esses idiomas trocam na hora, sem
+   * esperar o servidor. Textos base alterados depois são traduzidos ao vivo.
+   */
+  cache?: Record<string, Record<string, string>>;
   /** Textos do popup, no idioma base. Os que faltarem usam os padrões em inglês. */
   promptTexts?: Partial<PromptTexts>;
   /** Onde persistir o cache de traduções. Padrão: localStorage. `null` mantém só em memória. */
@@ -180,6 +186,14 @@ export function createPoly(options: PolyOptions): Poly {
   const cache = new TranslationCache(
     options.storage === undefined ? defaultStorage() : options.storage,
   );
+  for (const [language, entries] of Object.entries(options.cache ?? {})) {
+    const target = normalizeLanguage(language);
+    if (!target) continue;
+    const pairs = Object.entries(entries);
+    cache.setMany(baseLanguage, target, pairs);
+    // Os textos padrão do popup e do botão estão em inglês.
+    if (baseLanguage !== "en") cache.setMany("en", target, pairs);
+  }
 
   // Textos padrão estão em inglês; se o dev passou os próprios, estão no idioma base.
   const promptBase: PromptTexts = { ...DEFAULT_PROMPT_TEXTS, ...options.promptTexts };

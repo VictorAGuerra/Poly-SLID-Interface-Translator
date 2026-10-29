@@ -1,6 +1,6 @@
 {
   "name": "@swalay/poly-core",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Voice-driven interface translation: detects the spoken language and translates your UI texts on the fly, with protected terms, reviewed overrides and caching.",
   "keywords": [
     "i18n",
@@ -33,6 +33,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "poly": "./dist/bin.js"
+  },
   "files": [
     "dist",
     "src"
@@ -51,6 +54,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "i18next": "^26.5.11",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

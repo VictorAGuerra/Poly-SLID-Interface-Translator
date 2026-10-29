@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { I18nAdapter } from "../src/adapter.js";
 import type { DetectionEvent, PolyTransport } from "../src/client.js";
 import { UnsupportedLanguageError } from "../src/client.js";
-import { createPoly, type PolyOptions } from "../src/poly.js";
+import { createPoly, DEFAULT_PROMPT_TEXTS, type PolyOptions } from "../src/poly.js";
 
 function setup(opts: Partial<PolyOptions> = {}) {
   const bundles = new Map<string, Record<string, string>>([["en", { hi: "hello" }]]);
@@ -50,6 +50,20 @@ describe("createPoly", () => {
     expect(poly.getState()).toMatchObject({ status: "idle", language: "pt", pending: null });
     expect(bundles.get("pt")).toEqual({ hi: "[pt] hello" });
     expect(current()).toBe("pt");
+  });
+
+  it("usa as traduções de `cache` sem chamar o servidor", async () => {
+    const pt = Object.fromEntries(
+      [...Object.values(DEFAULT_PROMPT_TEXTS), "hello"].map((t) => [t, `(cache) ${t}`]),
+    );
+    const { poly, bundles, transport } = setup({ cache: { "pt-BR": pt } });
+    poly.handleDetection(speech("pt"));
+    await vi.waitFor(() => expect(poly.getState().promptReady).toBe(true));
+    expect(poly.getState().promptTexts.confirm).toBe("(cache) Switch");
+
+    await poly.accept();
+    expect(bundles.get("pt")).toEqual({ hi: "(cache) hello" });
+    expect(transport.translate).not.toHaveBeenCalled();
   });
 
   it("ignora baixa confiança, texto curto, idioma atual e idiomas fora da lista", () => {

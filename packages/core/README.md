@@ -22,6 +22,9 @@ instead; it re-exports everything from this package.
   `{{variables}}` are never translated. Broken translations are detected and
   retried segment by segment, so protected terms are never lost.
 - **Reviewed overrides** take priority over machine translation.
+- **Translate ahead of time** with `npx poly cache locales/en.json --to es,fr`
+  and pass the files as `createPoly({ cache: { es, fr } })`: those languages
+  switch instantly, even with the server offline.
 - Kiosk-friendly: return to the base language after inactivity, automatic
   `lang` / `dir` (RTL) on `<html>`.
 - i18next adapter included; any i18n library works by implementing
@@ -83,6 +86,9 @@ já reexporta tudo deste pacote.
 - **Termos protegidos:** lista `noTranslate`, marcação `<nt>...</nt>` e
   `{{variáveis}}` nunca são traduzidos.
 - **Traduções revisadas** têm prioridade sobre a automática.
+- **Tradução antecipada** com `npx poly cache locales/en.json --to es,fr`,
+  passando os arquivos em `createPoly({ cache: { es, fr } })`: esses idiomas
+  trocam na hora, mesmo com o servidor fora do ar.
 - Feito para quiosques: volta ao idioma base sem atividade, ajusta `lang` e
   `dir` (idiomas da direita para a esquerda).
 - Adaptador para i18next incluído.

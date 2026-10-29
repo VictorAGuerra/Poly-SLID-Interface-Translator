@@ -23,11 +23,12 @@ export function stripMarkup(text: string): string {
 
 type Nested = { [key: string]: unknown };
 
-function flatten(obj: Nested, prefix = "", out: Record<string, string> = {}): Record<string, string> {
+/** Achata `{ a: { b: "x" } }` em `{ "a.b": "x" }`. Valores que não são texto são ignorados. */
+export function flattenTexts(obj: Nested, prefix = "", out: Record<string, string> = {}): Record<string, string> {
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}.${k}` : k;
     if (typeof v === "string") out[key] = v;
-    else if (v && typeof v === "object" && !Array.isArray(v)) flatten(v as Nested, key, out);
+    else if (v && typeof v === "object" && !Array.isArray(v)) flattenTexts(v as Nested, key, out);
   }
   return out;
 }
@@ -69,7 +70,7 @@ export function createI18nextAdapter(
   }
 
   // Guarda os originais (com <nt>) para traduzir e deixa o i18next exibir sem as marcações.
-  const baseTexts = flatten(bundle);
+  const baseTexts = flattenTexts(bundle);
   i18n.addResourceBundle(base, ns, mapStrings(bundle, stripMarkup), true, true);
 
   return {
