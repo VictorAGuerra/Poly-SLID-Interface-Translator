@@ -1,6 +1,6 @@
 {
   "name": "@swalay/poly-react",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "React bindings for poly: provider, hook and a ready-made prompt that offers to switch the interface to the language people speak.",
   "keywords": [
     "react",
